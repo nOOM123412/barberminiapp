@@ -1,0 +1,375 @@
+import asyncio
+import logging
+from datetime import datetime, timedelta
+from aiogram import Bot, Dispatcher, F
+from aiogram.types import Message, CallbackQuery, InlineKeyboardMarkup, InlineKeyboardButton, WebAppInfo
+from aiogram.filters import CommandStart
+from aiogram.fsm.state import State, StatesGroup
+from aiogram.fsm.context import FSMContext
+from aiogram.client.default import DefaultBotProperties
+from aiogram.enums import ParseMode
+import json
+
+# ================== НАСТРОЙКИ ==================
+BOT_TOKEN = "-"
+# Ссылка на твой GitHub Pages (обязательно со слешем на конце!)
+WEBAPP_URL = "https://noom123412.github.io/barberminiapp/"
+ADMIN_CHAT_ID = None  # Вставь свой ID (узнать можно у @userinfobot), чтобы получать уведомления
+
+# ================== ДАННЫЕ ==================
+SHOP_NAME = "Примерный"
+SHOP_TAGLINE = "Барбершоп, в который возвращаются"
+SHOP_ADDRESS = "г. Москва, ул. Примерная, д. 1"
+SHOP_PHONE = "+7 (999) 123-45-67"
+WORK_HOURS = "10:00 – 21:00 · без выходных"
+SHOP_RATING = "4.9 ★ (127 отзывов)"
+
+MASTERS = {
+    "1": {"name": "Алексей", "spec": "Классика · борода", "exp": "7 лет", "rating": "5.0 ★"},
+    "2": {"name": "Дмитрий", "spec": "Фейд · современные стрижки", "exp": "5 лет", "rating": "4.9 ★"},
+    "3": {"name": "Артём", "spec": "Борода · бритьё", "exp": "6 лет", "rating": "5.0 ★"},
+    "4": {"name": "Иван", "spec": "Детские стрижки", "exp": "4 года", "rating": "4.8 ★"},
+    "5": {"name": "Максим", "spec": "Топ-мастер · любые стрижки", "exp": "10 лет", "rating": "5.0 ★"},
+}
+
+SERVICES = {
+    "haircut": {"name": "Стрижка", "price": 1500, "duration": 45, "emoji": "✂️"},
+    "beard": {"name": "Борода", "price": 800, "duration": 30, "emoji": "🧔"},
+    "combo": {"name": "Стрижка + борода", "price": 2000, "duration": 75, "emoji": "💈"},
+    "kids": {"name": "Детская стрижка", "price": 1000, "duration": 30, "emoji": "🧒"},
+    "shave": {"name": "Бритьё", "price": 700, "duration": 30, "emoji": "🪒"},
+}
+
+SLOT_HOURS = [10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20]
+bookings = []
+
+# ================== ИНИЦИАЛИЗАЦИЯ ==================
+logging.basicConfig(level=logging.INFO)
+bot = Bot(token=BOT_TOKEN, default=DefaultBotProperties(parse_mode=ParseMode.HTML))
+dp = Dispatcher()
+
+
+class Booking(StatesGroup):
+    choosing_service = State()
+    choosing_master = State()
+    choosing_date = State()
+    choosing_time = State()
+    confirming = State()
+
+
+# ================== КЛАВИАТУРЫ ==================
+def main_menu_kb():
+    return InlineKeyboardMarkup(inline_keyboard=[
+        [InlineKeyboardButton(text="🚀 Открыть Mini App", web_app=WebAppInfo(url=WEBAPP_URL))],
+        [InlineKeyboardButton(text="✂️  Записаться (в чате)", callback_data="book")],
+        [
+            InlineKeyboardButton(text="📋 Мои записи", callback_data="my_bookings"),
+            InlineKeyboardButton(text="👨‍🔧 Мастера", callback_data="masters"),
+        ],
+        [
+            InlineKeyboardButton(text="💰 Услуги", callback_data="services"),
+            InlineKeyboardButton(text="📍 О нас", callback_data="about"),
+        ],
+    ])
+
+
+def services_kb():
+    buttons = [[InlineKeyboardButton(text=f"{s['emoji']} {s['name']} · {s['price']} ₽", callback_data=f"svc_{k}")] for
+               k, s in SERVICES.items()]
+    buttons.append([InlineKeyboardButton(text="⬅️  Назад", callback_data="back_main")])
+    return InlineKeyboardMarkup(inline_keyboard=buttons)
+
+
+def masters_kb():
+    buttons = [[InlineKeyboardButton(text=f"Мастер {k} · {m['name']} · {m['rating']}", callback_data=f"mst_{k}")] for
+               k, m in MASTERS.items()]
+    buttons.append([InlineKeyboardButton(text="⬅️  Назад", callback_data="back_main")])
+    return InlineKeyboardMarkup(inline_keyboard=buttons)
+
+
+def dates_kb():
+    buttons = []
+    today = datetime.now()
+    weekdays = ["Пн", "Вт", "Ср", "Чт", "Пт", "Сб", "Вс"]
+    for i in range(7):
+        d = today + timedelta(days=i)
+        label = "Сегодня" if i == 0 else ("Завтра" if i == 1 else weekdays[d.weekday()])
+        buttons.append([InlineKeyboardButton(text=f"{label} · {d.strftime('%d.%m')}",
+                                             callback_data=f"date_{d.strftime('%Y-%m-%d')}")])
+    buttons.append([InlineKeyboardButton(text="⬅️  Назад", callback_data="back_masters")])
+    return InlineKeyboardMarkup(inline_keyboard=buttons)
+
+
+def times_kb(date_str):
+    buttons, row = [], []
+    for h in SLOT_HOURS:
+        time_str = f"{h:02d}:00"
+        busy = any(b["date"] == date_str and b["time"] == time_str for b in bookings)
+        if not busy:
+            row.append(InlineKeyboardButton(text=time_str, callback_data=f"time_{time_str}"))
+        if len(row) == 3:
+            buttons.append(row);
+            row = []
+    if row: buttons.append(row)
+    buttons.append([InlineKeyboardButton(text="⬅️  Назад", callback_data="back_dates")])
+    return InlineKeyboardMarkup(inline_keyboard=buttons)
+
+
+def confirm_kb():
+    return InlineKeyboardMarkup(inline_keyboard=[
+        [InlineKeyboardButton(text="✅  Подтвердить запись", callback_data="confirm_yes")],
+        [InlineKeyboardButton(text="⬅️  Назад", callback_data="back_main")],
+    ])
+
+
+def back_kb(cb): return InlineKeyboardMarkup(
+    inline_keyboard=[[InlineKeyboardButton(text="⬅️  Назад", callback_data=cb)]])
+
+
+# ================== ХЕНДЛЕРЫ ==================
+@dp.message(CommandStart())
+async def start(msg: Message, state: FSMContext):
+    await state.clear()
+    text = (
+        f"💈 <b>{SHOP_NAME}</b>\n"
+        f"<i>{SHOP_TAGLINE}</i>\n"
+        f"━━━━━━━━━━━━━━━━━━\n\n"
+        f"⭐ {SHOP_RATING}\n"
+        f"📍 {SHOP_ADDRESS}\n"
+        f"🕐 {WORK_HOURS}\n"
+        f"📞 {SHOP_PHONE}\n\n"
+        f"<i>Нажмите кнопку ниже, чтобы открыть приложение и записаться за 30 секунд.</i>"
+    )
+    await msg.answer(text, reply_markup=main_menu_kb())
+
+
+@dp.callback_query(F.data == "back_main")
+async def back_main(cb: CallbackQuery, state: FSMContext):
+    await state.clear()
+    text = (
+        f"💈 <b>{SHOP_NAME}</b>\n"
+        f"<i>{SHOP_TAGLINE}</i>\n"
+        f"━━━━━━━━━━━━━━━━━━\n\n"
+        f"⭐ {SHOP_RATING}\n"
+        f"📍 {SHOP_ADDRESS}\n"
+        f"🕐 {WORK_HOURS}\n"
+        f"📞 {SHOP_PHONE}"
+    )
+    await cb.message.edit_text(text, reply_markup=main_menu_kb())
+    await cb.answer()
+
+
+# --- ИНТЕГРАЦИЯ MINI APP (Ловим данные из WebApp) ---
+@dp.message(F.web_app_data)
+async def web_app_data_handler(msg: Message):
+    try:
+        data = json.loads(msg.web_app_data.data)
+
+        s = SERVICES.get(data["service_id"])
+        m = MASTERS.get(data["master_id"])
+        d_str = data["date"]
+        t_str = data["time"]
+
+        if not s or not m:
+            await msg.answer("Ошибка данных.")
+            return
+
+        d_formatted = datetime.strptime(d_str, "%Y-%m-%d").strftime("%d.%m.%Y")
+
+        # Сохраняем запись
+        booking = {
+            "user_id": msg.from_user.id,
+            "user_name": msg.from_user.full_name,
+            "date": d_str,
+            "time": t_str,
+            "master": m["name"],
+            "service": s["name"],
+            "service_key": data["service_id"],
+            "price": s["price"],
+        }
+        bookings.append(booking)
+
+        # Отправляем подтверждение клиенту в бот
+        text = (
+            f"✅ <b>Вы записаны!</b>\n"
+            f"━━━━━━━━━━━━━━━━━━\n\n"
+            f"💈 <b>{SHOP_NAME}</b>\n\n"
+            f"{s['emoji']} {s['name']} — <b>{s['price']} ₽</b>\n"
+            f"👨‍🔧 Мастер: <b>{m['name']}</b>\n"
+            f"📅 <b>{d_formatted} в {t_str}</b>\n\n"
+            f"📍 {SHOP_ADDRESS}\n"
+            f"📞 {SHOP_PHONE}\n\n"
+            f"<i>Ждем вас!</i>"
+        )
+
+        # Клавиатура с кнопкой возврата в Mini App (к своим записям)
+        kb = InlineKeyboardMarkup(inline_keyboard=[
+            [InlineKeyboardButton(text="📱 Мои записи в приложении", web_app=WebAppInfo(url=WEBAPP_URL))]
+        ])
+
+        await msg.answer(text, reply_markup=kb)
+
+        # Уведомление админу
+        if ADMIN_CHAT_ID:
+            await bot.send_message(
+                ADMIN_CHAT_ID,
+                f"🔔 <b>Новая запись (Mini App)!</b>\n"
+                f"👤 {msg.from_user.full_name}\n"
+                f"✂️ {s['name']} - {s['price']} ₽\n"
+                f"👨‍🔧 {m['name']}\n"
+                f"📅 {d_formatted} в {t_str}"
+            )
+
+    except Exception as e:
+        logging.error(f"Ошибка обработки WebApp: {e}")
+        await msg.answer("Произошла ошибка при сохранении записи. Попробуйте еще раз.")
+
+
+# --- Кнопка "Мои записи" (в чате) ---
+@dp.callback_query(F.data == "my_bookings")
+async def my_bookings(cb: CallbackQuery):
+    user_bookings = [b for b in bookings if b["user_id"] == cb.from_user.id]
+    if not user_bookings:
+        text = "📋 <b>Мои записи</b>\n━━━━━━━━━━━━━━━━━━\n\nУ вас пока нет активных записей."
+    else:
+        text = "📋 <b>Ваши записи</b>\n━━━━━━━━━━━━━━━━━━\n\n"
+        for i, b in enumerate(user_bookings, 1):
+            d = datetime.strptime(b['date'], "%Y-%m-%d").strftime("%d.%m.%Y")
+            s = SERVICES.get(b.get('service_key'), {"emoji": "✂️"})
+            text += f"<b>Запись #{i}</b>\n{s['emoji']} {b['service']} — {b['price']} ₽\n👨‍🔧 Мастер: {b['master']}\n📅 {d} в {b['time']}\n\n"
+    await cb.message.edit_text(text, reply_markup=back_kb("back_main"))
+    await cb.answer()
+
+
+# --- ОСТАЛЬНЫЕ ХЕНДЛЕРЫ (Запись в чате, Услуги, Мастера, О нас) ---
+@dp.callback_query(F.data == "about")
+async def about(cb: CallbackQuery):
+    text = (
+        f"💈 <b>{SHOP_NAME}</b>\n"
+        f"<i>{SHOP_TAGLINE}</i>\n"
+        f"━━━━━━━━━━━━━━━━━━\n\n"
+        f"Мы — барбершоп, где ценят ваше время и стиль. "
+        f"Пять мастеров с опытом от 4 до 10 лет.\n\n"
+        f"⭐ {SHOP_RATING}\n"
+        f"📍 {SHOP_ADDRESS}\n"
+        f"🕐 {WORK_HOURS}\n"
+        f"📞 {SHOP_PHONE}"
+    )
+    await cb.message.edit_text(text, reply_markup=back_kb("back_main"))
+    await cb.answer()
+
+
+@dp.callback_query(F.data == "services")
+async def show_services(cb: CallbackQuery):
+    text = "💰 <b>Услуги и цены</b>\n━━━━━━━━━━━━━━━━━━\n\n"
+    for s in SERVICES.values():
+        text += f"{s['emoji']} <b>{s['name']}</b> — {s['price']} ₽ · {s['duration']} мин\n\n"
+    await cb.message.edit_text(text, reply_markup=back_kb("back_main"))
+    await cb.answer()
+
+
+@dp.callback_query(F.data == "masters")
+async def show_masters(cb: CallbackQuery):
+    text = "👨‍🔧 <b>Наши мастера</b>\n━━━━━━━━━━━━━━━━━━\n\n"
+    for i, m in MASTERS.items():
+        text += f"<b>Мастер {i}. {m['name']}</b>\n{m['spec']} · {m['rating']}\n\n"
+    await cb.message.edit_text(text, reply_markup=back_kb("back_main"))
+    await cb.answer()
+
+
+@dp.callback_query(F.data == "book")
+async def book_start(cb: CallbackQuery, state: FSMContext):
+    await state.set_state(Booking.choosing_service)
+    await cb.message.edit_text("✂️ <b>Шаг 1 из 4 — услуга</b>\n━━━━━━━━━━━━━━━━━━\n\nВыберите услугу:",
+                               reply_markup=services_kb())
+    await cb.answer()
+
+
+@dp.callback_query(Booking.choosing_service, F.data.startswith("svc_"))
+async def choose_service(cb: CallbackQuery, state: FSMContext):
+    key = cb.data.replace("svc_", "")
+    await state.update_data(service=key)
+    await state.set_state(Booking.choosing_master)
+    s = SERVICES[key]
+    await cb.message.edit_text(
+        f"{s['emoji']} <b>{s['name']}</b> · {s['price']} ₽\n━━━━━━━━━━━━━━━━━━\n\n👨‍🔧 <b>Шаг 2 из 4 — мастер</b>\n\nВыберите мастера:",
+        reply_markup=masters_kb())
+    await cb.answer()
+
+
+@dp.callback_query(Booking.choosing_master, F.data.startswith("mst_"))
+async def choose_master(cb: CallbackQuery, state: FSMContext):
+    key = cb.data.replace("mst_", "")
+    await state.update_data(master=key)
+    await state.set_state(Booking.choosing_date)
+    m = MASTERS[key]
+    await cb.message.edit_text(
+        f"👨‍🔧 <b>Мастер {key}. {m['name']}</b>\n━━━━━━━━━━━━━━━━━━\n\n📅 <b>Шаг 3 из 4 — дата</b>\n\nВыберите день:",
+        reply_markup=dates_kb())
+    await cb.answer()
+
+
+@dp.callback_query(F.data == "back_masters")
+async def back_to_masters(cb: CallbackQuery, state: FSMContext):
+    await state.set_state(Booking.choosing_master)
+    await cb.message.edit_text("👨‍🔧 <b>Шаг 2 из 4 — мастер</b>\n━━━━━━━━━━━━━━━━━━\n\nВыберите мастера:",
+                               reply_markup=masters_kb())
+    await cb.answer()
+
+
+@dp.callback_query(Booking.choosing_date, F.data.startswith("date_"))
+async def choose_date(cb: CallbackQuery, state: FSMContext):
+    date_str = cb.data.replace("date_", "")
+    await state.update_data(date=date_str)
+    await state.set_state(Booking.choosing_time)
+    d = datetime.strptime(date_str, "%Y-%m-%d").strftime("%d.%m.%Y")
+    await cb.message.edit_text(f"📅 <b>{d}</b>\n━━━━━━━━━━━━━━━━━━\n\n🕐 <b>Шаг 4 из 4 — время</b>\n\nВыберите время:",
+                               reply_markup=times_kb(date_str))
+    await cb.answer()
+
+
+@dp.callback_query(F.data == "back_dates")
+async def back_to_dates(cb: CallbackQuery, state: FSMContext):
+    await state.set_state(Booking.choosing_date)
+    await cb.message.edit_text("📅 <b>Шаг 3 из 4 — дата</b>\n━━━━━━━━━━━━━━━━━━\n\nВыберите день:",
+                               reply_markup=dates_kb())
+    await cb.answer()
+
+
+@dp.callback_query(Booking.choosing_time, F.data.startswith("time_"))
+async def choose_time(cb: CallbackQuery, state: FSMContext):
+    time_str = cb.data.replace("time_", "")
+    await state.update_data(time=time_str)
+    await state.set_state(Booking.confirming)
+    data = await state.get_data()
+    s = SERVICES[data["service"]];
+    m = MASTERS[data["master"]]
+    d = datetime.strptime(data["date"], "%Y-%m-%d").strftime("%d.%m.%Y")
+    text = f"📋 <b>Проверьте запись</b>\n━━━━━━━━━━━━━━━━━━\n\n💈 <b>{SHOP_NAME}</b>\n\n{s['emoji']} {s['name']} — <b>{s['price']} ₽</b>\n👨‍🔧 {m['name']}\n📅 {d} в {time_str}\n\n<i>Всё верно?</i>"
+    await cb.message.edit_text(text, reply_markup=confirm_kb())
+    await cb.answer()
+
+
+@dp.callback_query(Booking.confirming, F.data == "confirm_yes")
+async def confirm_yes(cb: CallbackQuery, state: FSMContext):
+    data = await state.get_data()
+    s = SERVICES[data["service"]];
+    m = MASTERS[data["master"]]
+    d = datetime.strptime(data["date"], "%Y-%m-%d").strftime("%d.%m.%Y")
+    booking = {"user_id": cb.from_user.id, "user_name": cb.from_user.full_name, "date": data["date"],
+               "time": data["time"], "master": m["name"], "service": s["name"], "service_key": data["service"],
+               "price": s["price"]}
+    bookings.append(booking)
+    text = f"✅ <b>Вы записаны!</b>\n━━━━━━━━━━━━━━━━━━\n\n💈 <b>{SHOP_NAME}</b>\n\n{s['emoji']} {s['name']} — <b>{s['price']} ₽</b>\n👨‍🔧 {m['name']}\n📅 <b>{d} в {data['time']}</b>\n\n📍 {SHOP_ADDRESS}\n📞 {SHOP_PHONE}"
+    await cb.message.edit_text(text, reply_markup=main_menu_kb())
+    await state.clear()
+
+
+# ================== ЗАПУСК ==================
+async def main():
+    logging.info("Бот запущен")
+    await dp.start_polling(bot)
+
+
+if __name__ == "__main__":
+    asyncio.run(main())
