@@ -8,7 +8,7 @@
     <style>
         :root {
             --bg-color: #0f0f0f;
-            --card-bg: rgba(30, 30, 30, 0.6);
+            --card-bg: rgba(30, 30, 30, 0.7);
             --text-main: #ffffff;
             --text-muted: #8e8e93;
             --accent: #ff4757;
@@ -22,353 +22,362 @@
         body {
             background-color: var(--bg-color);
             color: var(--text-main);
-            padding: 20px;
-            padding-bottom: 130px;
             overflow-x: hidden;
-            /* Красивый градиентный фон */
             background-image: 
-                radial-gradient(circle at 10% 10%, rgba(255, 71, 87, 0.1) 0%, transparent 50%),
-                radial-gradient(circle at 90% 90%, rgba(255, 107, 129, 0.1) 0%, transparent 50%);
+                radial-gradient(circle at 10% 10%, rgba(255, 71, 87, 0.08) 0%, transparent 50%),
+                radial-gradient(circle at 90% 90%, rgba(255, 107, 129, 0.08) 0%, transparent 50%);
             background-attachment: fixed;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
         }
 
-        /* Анимация появления элементов */
-        .animate-up {
-            animation: fadeUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-            opacity: 0;
-            transform: translateY(20px);
-        }
+        /* Общие стили для страниц */
+        .page { display: none; flex: 1; padding: 20px; padding-bottom: 100px; overflow-y: auto; }
+        .page.active { display: block; animation: fadeIn 0.3s ease; }
+        
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 
-        @keyframes fadeUp {
-            to { opacity: 1; transform: translateY(0); }
-        }
-
-        /* Заголовок */
-        .header { display: flex; align-items: center; gap: 15px; margin-bottom: 30px; }
-        .header-logo { width: 56px; height: 56px; background: var(--accent-gradient); border-radius: 16px; display: flex; align-items: center; justify-content: center; font-size: 28px; box-shadow: 0 8px 25px rgba(255, 71, 87, 0.4); }
+        .header { display: flex; align-items: center; gap: 15px; margin-bottom: 25px; }
+        .header-logo { width: 56px; height: 56px; background: var(--accent-gradient); border-radius: 16px; display: flex; align-items: center; justify-content: center; font-size: 28px; box-shadow: 0 8px 25px rgba(255, 71, 87, 0.3); }
         .header-title h1 { font-size: 22px; font-weight: 800; letter-spacing: -0.5px; }
         .header-title p { font-size: 13px; color: var(--text-muted); margin-top: 4px; }
 
-        .section-title { font-size: 18px; font-weight: 700; margin: 25px 0 15px 0; display: flex; align-items: center; gap: 8px; }
+        /* Карточки на главной */
+        .hero-card { background: var(--card-bg); backdrop-filter: blur(15px); border: var(--glass-border); border-radius: var(--border-radius); padding: 20px; margin-bottom: 15px; display: flex; align-items: center; gap: 15px; }
+        .hero-card .icon { font-size: 30px; }
+        .hero-card .info h3 { font-size: 16px; margin-bottom: 4px; }
+        .hero-card .info p { font-size: 13px; color: var(--text-muted); }
 
-        /* Услуги */
-        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
-        .card { 
-            background: var(--card-bg); 
-            backdrop-filter: blur(10px);
-            padding: 18px; 
-            border-radius: var(--border-radius); 
-            border: var(--glass-border); 
-            transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1); 
-            cursor: pointer; 
-            position: relative;
-            overflow: hidden;
-        }
-        .card::after { content: ''; position: absolute; inset: 0; background: var(--accent-gradient); opacity: 0; transition: opacity 0.3s; z-index: -1; }
-        .card:active { transform: scale(0.95); }
-        .card.active { border-color: var(--accent); box-shadow: 0 5px 20px rgba(255, 71, 87, 0.15); }
-        .card.active::after { opacity: 0.1; }
-        .card-emoji { font-size: 26px; margin-bottom: 10px; }
-        .card-title { font-size: 15px; font-weight: 600; margin-bottom: 6px; }
-        .card-price { font-size: 16px; font-weight: 800; color: var(--accent); }
-        .card-duration { font-size: 12px; color: var(--text-muted); margin-top: 4px; }
+        /* Кнопка открытия шторки */
+        .btn-main { width: 100%; background: var(--accent-gradient); color: white; border: none; padding: 18px; border-radius: 16px; font-size: 17px; font-weight: 700; cursor: pointer; box-shadow: 0 8px 25px rgba(255, 71, 87, 0.4); transition: transform 0.2s; margin-top: 20px; }
+        .btn-main:active { transform: scale(0.96); }
 
-        /* Мастера */
-        .masters-scroll { display: flex; gap: 12px; overflow-x: auto; padding-bottom: 10px; scroll-snap-type: x mandatory; scrollbar-width: none; }
-        .masters-scroll::-webkit-scrollbar { display: none; }
-        .master-card { 
-            min-width: 130px; 
-            background: var(--card-bg); 
-            backdrop-filter: blur(10px);
-            padding: 18px 15px; 
-            border-radius: var(--border-radius); 
-            text-align: center; 
-            border: var(--glass-border); 
-            transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1); 
-            cursor: pointer; 
-            scroll-snap-align: start;
-        }
-        .master-card:active { transform: scale(0.95); }
-        .master-card.active { border-color: var(--accent); box-shadow: 0 5px 20px rgba(255, 71, 87, 0.15); }
-        .master-avatar { 
-            width: 64px; height: 64px; 
-            border-radius: 50%; 
-            margin: 0 auto 12px auto; 
-            display: flex; align-items: center; justify-content: center; 
-            font-size: 32px; 
-            background: linear-gradient(135deg, #2c2c2e 0%, #1c1c1e 100%);
-            border: 2px solid rgba(255,255,255,0.05);
-        }
-        .master-card.active .master-avatar { border-color: var(--accent); background: var(--accent-gradient); }
-        .master-name { font-size: 15px; font-weight: 600; margin-bottom: 4px; }
-        .master-rating { font-size: 13px; color: #ffd700; font-weight: 600; }
+        /* Нижний Таб-бар */
+        .tab-bar { position: fixed; bottom: 0; left: 0; right: 0; background: rgba(18, 18, 18, 0.85); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); border-top: 1px solid rgba(255,255,255,0.1); display: flex; justify-content: space-around; padding: 10px 0 25px 0; z-index: 50; }
+        .tab-item { display: flex; flex-direction: column; align-items: center; gap: 4px; color: var(--text-muted); font-size: 11px; font-weight: 600; cursor: pointer; transition: 0.2s; }
+        .tab-item.active { color: var(--accent); }
+        .tab-item svg { width: 24px; height: 24px; fill: currentColor; }
 
-        /* Даты */
-        .dates-scroll { display: flex; gap: 10px; overflow-x: auto; padding-bottom: 10px; scroll-snap-type: x mandatory; scrollbar-width: none; }
-        .dates-scroll::-webkit-scrollbar { display: none; }
-        .date-pill { 
-            min-width: 76px; 
-            background: var(--card-bg); 
-            backdrop-filter: blur(10px);
-            padding: 14px 10px; 
-            border-radius: 16px; 
-            text-align: center; 
-            border: var(--glass-border); 
-            cursor: pointer; 
-            transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1); 
-            scroll-snap-align: start;
-        }
-        .date-pill:active { transform: scale(0.95); }
-        .date-pill.active { border-color: var(--accent); background: var(--accent-gradient); box-shadow: 0 5px 15px rgba(255, 71, 87, 0.3); }
-        .date-day { font-size: 12px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; }
-        .date-pill.active .date-day { color: #fff; opacity: 0.9; }
-        .date-num { font-size: 20px; font-weight: 800; margin-top: 4px; }
-
-        /* Время */
-        .time-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
-        .time-pill { 
-            background: var(--card-bg); 
-            backdrop-filter: blur(10px);
-            padding: 14px 0; 
-            border-radius: 14px; 
-            text-align: center; 
-            border: var(--glass-border); 
-            font-size: 15px; 
-            font-weight: 700; 
-            cursor: pointer; 
-            transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1); 
-        }
-        .time-pill:active { transform: scale(0.9); }
-        .time-pill.active { border-color: var(--accent); background: var(--accent-gradient); box-shadow: 0 5px 15px rgba(255, 71, 87, 0.3); }
-        .time-pill.disabled { opacity: 0.2; pointer-events: none; text-decoration: line-through; }
-
-        /* Нижняя плавающая панель */
-        .bottom-panel {
-            position: fixed; 
-            bottom: 0; left: 0; right: 0; 
-            background: rgba(18, 18, 18, 0.85); 
-            backdrop-filter: blur(20px); 
-            -webkit-backdrop-filter: blur(20px);
-            padding: 20px 20px 35px 20px; 
-            border-top: 1px solid rgba(255,255,255,0.1); 
-            display: flex; flex-direction: column; gap: 15px; 
-            transform: translateY(100%); 
-            transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
-            box-shadow: 0 -10px 40px rgba(0,0,0,0.5);
-            z-index: 100;
-        }
-        .bottom-panel.visible { transform: translateY(0); }
-        .total-info { display: flex; justify-content: space-between; align-items: center; font-size: 15px; }
-        .selected-details { display: flex; flex-direction: column; gap: 4px; }
-        .selected-details span { font-weight: 600; color: var(--text-main); }
-        .selected-details small { color: var(--text-muted); font-size: 13px; }
-        .total-price { font-weight: 800; font-size: 22px; color: var(--accent); }
+        /* Шторка записи (Bottom Sheet) */
+        .overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.6); opacity: 0; pointer-events: none; transition: opacity 0.3s; z-index: 90; backdrop-filter: blur(2px); }
+        .overlay.active { opacity: 1; pointer-events: auto; }
         
-        .btn-book { 
-            width: 100%; 
-            background: var(--accent-gradient); 
-            color: white; 
-            border: none; 
-            padding: 18px; 
-            border-radius: 16px; 
-            font-size: 17px; 
-            font-weight: 700; 
-            cursor: pointer; 
-            box-shadow: 0 8px 25px rgba(255, 71, 87, 0.4); 
-            transition: all 0.2s; 
+        .bottom-sheet {
+            position: fixed; bottom: 0; left: 0; right: 0; height: 90vh;
+            background: #1a1a1a; border-radius: 24px 24px 0 0; z-index: 100;
+            transform: translateY(100%); transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+            display: flex; flex-direction: column; box-shadow: 0 -10px 40px rgba(0,0,0,0.5);
         }
-        .btn-book:active { transform: scale(0.96); }
-        .btn-book.disabled { opacity: 0.5; pointer-events: none; background: #333; box-shadow: none; color: #888; }
+        .bottom-sheet.active { transform: translateY(0); }
+        
+        .sheet-handle { width: 40px; height: 5px; background: #333; border-radius: 5px; margin: 12px auto 10px auto; }
+        .sheet-content { flex: 1; overflow-y: auto; padding: 0 20px 20px 20px; }
+
+        .section-title { font-size: 18px; font-weight: 700; margin: 20px 0 12px 0; }
+
+        /* Услуги, мастера, даты (внутри шторки) */
+        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+        .card { background: var(--card-bg); padding: 16px; border-radius: var(--border-radius); border: var(--glass-border); transition: 0.3s; cursor: pointer; }
+        .card:active { transform: scale(0.95); }
+        .card.active { border-color: var(--accent); background: rgba(255, 71, 87, 0.1); }
+        .card-emoji { font-size: 24px; margin-bottom: 8px; }
+        .card-title { font-size: 14px; font-weight: 600; margin-bottom: 4px; }
+        .card-price { font-size: 15px; font-weight: 800; color: var(--accent); }
+
+        .masters-scroll { display: flex; gap: 12px; overflow-x: auto; padding-bottom: 10px; scrollbar-width: none; }
+        .masters-scroll::-webkit-scrollbar { display: none; }
+        .master-card { min-width: 110px; background: var(--card-bg); padding: 15px; border-radius: var(--border-radius); text-align: center; border: var(--glass-border); cursor: pointer; transition: 0.3s; }
+        .master-card.active { border-color: var(--accent); background: rgba(255, 71, 87, 0.1); }
+        .master-avatar { width: 50px; height: 50px; border-radius: 50%; margin: 0 auto 10px auto; display: flex; align-items: center; justify-content: center; font-size: 24px; background: #333; }
+        .master-name { font-size: 14px; font-weight: 600; }
+
+        .dates-scroll { display: flex; gap: 10px; overflow-x: auto; padding-bottom: 10px; scrollbar-width: none; }
+        .dates-scroll::-webkit-scrollbar { display: none; }
+        .date-pill { min-width: 70px; background: var(--card-bg); padding: 12px; border-radius: 14px; text-align: center; border: var(--glass-border); cursor: pointer; transition: 0.3s; }
+        .date-pill.active { border-color: var(--accent); background: var(--accent-gradient); }
+        .date-day { font-size: 12px; color: var(--text-muted); }
+        .date-num { font-size: 18px; font-weight: 800; margin-top: 4px; }
+
+        .time-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
+        .time-pill { background: var(--card-bg); padding: 12px 0; border-radius: 12px; text-align: center; border: var(--glass-border); font-size: 14px; font-weight: 700; cursor: pointer; transition: 0.3s; }
+        .time-pill.active { border-color: var(--accent); background: var(--accent-gradient); }
+        .time-pill.disabled { opacity: 0.3; pointer-events: none; text-decoration: line-through; }
+
+        /* Кнопка подтверждения внутри шторки */
+        .sheet-footer { padding: 15px 20px 30px 20px; background: #1a1a1a; border-top: 1px solid rgba(255,255,255,0.05); }
+        .total-info { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
+        .total-price { font-size: 22px; font-weight: 800; color: var(--accent); }
+        .btn-confirm { width: 100%; background: var(--accent-gradient); color: white; border: none; padding: 16px; border-radius: 14px; font-size: 16px; font-weight: 700; cursor: pointer; transition: 0.2s; }
+        .btn-confirm.disabled { opacity: 0.5; pointer-events: none; background: #333; }
+
+        /* Стили для "Мои записи" */
+        .booking-item { background: var(--card-bg); border: var(--glass-border); border-radius: var(--border-radius); padding: 18px; margin-bottom: 15px; animation: fadeIn 0.4s ease; }
+        .booking-header { display: flex; justify-content: space-between; margin-bottom: 10px; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 10px; }
+        .booking-date { font-weight: 700; color: var(--accent); }
+        .booking-info { font-size: 14px; color: var(--text-muted); line-height: 1.6; }
+        .booking-info b { color: var(--text-main); }
+        .empty-state { text-align: center; color: var(--text-muted); margin-top: 50px; }
+        .empty-state svg { width: 60px; height: 60px; fill: #333; margin-bottom: 15px; }
     </style>
 </head>
 <body>
 
-    <div class="header animate-up" style="animation-delay: 0.1s;">
-        <div class="header-logo">💈</div>
-        <div class="header-title">
-            <h1>Примерный</h1>
-            <p>Барбершоп, в который возвращаются</p>
+    <!-- СТРАНИЦА 1: ГЛАВНАЯ -->
+    <div class="page active" id="page-home">
+        <div class="header">
+            <div class="header-logo">💈</div>
+            <div class="header-title">
+                <h1>Примерный</h1>
+                <p>Барбершоп, в который возвращаются</p>
+            </div>
+        </div>
+
+        <div class="hero-card">
+            <div class="icon">📍</div>
+            <div class="info">
+                <h3>Наш адрес</h3>
+                <p>г. Москва, ул. Примерная, д. 1</p>
+            </div>
+        </div>
+        <div class="hero-card">
+            <div class="icon">🕐</div>
+            <div class="info">
+                <h3>Часы работы</h3>
+                <p>10:00 – 21:00 · без выходных</p>
+            </div>
+        </div>
+        <div class="hero-card">
+            <div class="icon">⭐</div>
+            <div class="info">
+                <h3>Рейтинг</h3>
+                <p>4.9 ★ (127 отзывов)</p>
+            </div>
+        </div>
+
+        <button class="btn-main" onclick="openSheet()">Записаться сейчас</button>
+    </div>
+
+    <!-- СТРАНИЦА 2: МОИ ЗАПИСИ -->
+    <div class="page" id="page-bookings">
+        <div class="header" style="margin-bottom: 20px;">
+            <div class="header-title">
+                <h1>Мои записи</h1>
+                <p>Ваши визиты в «Примерный»</p>
+            </div>
+        </div>
+        <div id="bookings-list"></div>
+    </div>
+
+    <!-- НИЖНИЙ ТАБ-БАР -->
+    <div class="tab-bar">
+        <div class="tab-item active" onclick="switchTab('home', this)">
+            <svg viewBox="0 0 24 24"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>
+            <span>Главная</span>
+        </div>
+        <div class="tab-item" onclick="switchTab('bookings', this)">
+            <svg viewBox="0 0 24 24"><path d="M19 3h-1V1h-2v2H8V1H6v2H5c-1.11 0-1.99.9-1.99 2L3 19c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V8h14v11zM7 10h5v5H7z"/></svg>
+            <span>Записи</span>
         </div>
     </div>
 
-    <div class="section-title animate-up" style="animation-delay: 0.2s;">1. Услуга</div>
-    <div class="grid" id="services-grid"></div>
+    <!-- ШТОРКА ЗАПИСИ -->
+    <div class="overlay" id="overlay" onclick="closeSheet()"></div>
+    <div class="bottom-sheet" id="bottom-sheet">
+        <div class="sheet-handle"></div>
+        <div class="sheet-content">
+            <div class="section-title">1. Услуга</div>
+            <div class="grid" id="services-grid"></div>
 
-    <div class="section-title animate-up" style="animation-delay: 0.3s;">2. Мастер</div>
-    <div class="masters-scroll" id="masters-scroll"></div>
+            <div class="section-title">2. Мастер</div>
+            <div class="masters-scroll" id="masters-scroll"></div>
 
-    <div class="section-title animate-up" style="animation-delay: 0.4s;">3. Дата</div>
-    <div class="dates-scroll" id="dates-scroll"></div>
+            <div class="section-title">3. Дата</div>
+            <div class="dates-scroll" id="dates-scroll"></div>
 
-    <div class="section-title animate-up" style="animation-delay: 0.5s;">4. Время</div>
-    <div class="time-grid animate-up" id="time-grid" style="animation-delay: 0.5s;"></div>
-
-    <div class="bottom-panel" id="bottom-panel">
-        <div class="total-info">
-            <div class="selected-details">
-                <span id="selected-service">Выберите услугу</span>
-                <small id="selected-meta">Мастер, дата и время</small>
-            </div>
-            <div class="total-price" id="total-price">0 ₽</div>
+            <div class="section-title">4. Время</div>
+            <div class="time-grid" id="time-grid"></div>
         </div>
-        <button class="btn-book disabled" id="btn-book" onclick="bookAppointment()">Подтвердить</button>
+        <div class="sheet-footer">
+            <div class="total-info">
+                <span id="selected-info" style="font-size:14px; color:var(--text-muted);">Выберите параметры</span>
+                <span class="total-price" id="total-price">0 ₽</span>
+            </div>
+            <button class="btn-confirm disabled" id="btn-confirm" onclick="bookAppointment()">Подтвердить запись</button>
+        </div>
     </div>
 
     <script>
-        // Инициализация Telegram WebApp
         const tg = window.Telegram.WebApp;
         tg.expand();
         tg.setHeaderColor('#0f0f0f');
         tg.setBackgroundColor('#0f0f0f');
 
-        // Данные
+        // --- ДАННЫЕ ---
         const services = [
-            { id: 'haircut', name: 'Стрижка', price: 1500, duration: 45, emoji: '✂️' },
-            { id: 'beard', name: 'Борода', price: 800, duration: 30, emoji: '🧔' },
-            { id: 'combo', name: 'Стрижка + борода', price: 2000, duration: 75, emoji: '💈' },
-            { id: 'kids', name: 'Детская стрижка', price: 1000, duration: 30, emoji: '🧒' },
-            { id: 'shave', name: 'Бритьё', price: 700, duration: 30, emoji: '🪒' },
+            { id: 'haircut', name: 'Стрижка', price: 1500, emoji: '✂️' },
+            { id: 'beard', name: 'Борода', price: 800, emoji: '🧔' },
+            { id: 'combo', name: 'Стрижка + борода', price: 2000, emoji: '💈' },
+            { id: 'kids', name: 'Детская', price: 1000, emoji: '🧒' },
+            { id: 'shave', name: 'Бритьё', price: 700, emoji: '🪒' },
         ];
-
         const masters = [
-            { id: '1', name: 'Алексей', rating: '5.0', emoji: '👨‍🦱' },
-            { id: '2', name: 'Дмитрий', rating: '4.9', emoji: '👨‍🦲' },
-            { id: '3', name: 'Артём', rating: '5.0', emoji: '🧔' },
-            { id: '4', name: 'Иван', rating: '4.8', emoji: '👦' },
-            { id: '5', name: 'Максим', rating: '5.0', emoji: '👱' },
+            { id: '1', name: 'Алексей', emoji: '👨‍🦱' },
+            { id: '2', name: 'Дмитрий', emoji: '👨‍🦲' },
+            { id: '3', name: 'Артём', emoji: '🧔' },
         ];
-
         const dates = [];
         const weekdays = ['Вс', 'Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб'];
         const today = new Date();
         for (let i = 0; i < 7; i++) {
-            const d = new Date(today);
-            d.setDate(today.getDate() + i);
+            const d = new Date(today); d.setDate(today.getDate() + i);
             let label = weekdays[d.getDay()];
-            if (i === 0) label = 'Сегодня';
-            if (i === 1) label = 'Завтра';
-            dates.push({
-                full: d.toISOString().split('T')[0],
-                dayLabel: label,
-                numLabel: d.getDate() + '.' + (d.getMonth() + 1)
-            });
+            if (i === 0) label = 'Сегодня'; if (i === 1) label = 'Завтра';
+            dates.push({ full: d.toISOString().split('T')[0], dayLabel: label, numLabel: d.getDate() + '.' + (d.getMonth() + 1) });
         }
-
-        const times = ['10:00', '11:00', '12:00', '13:00', '14:00', '15:00', '16:00', '17:00', '18:00', '19:00', '20:00'];
+        const times = ['10:00', '11:00', '12:00', '13:00', '14:00', '15:00', '16:00', '17:00', '18:00', '19:00'];
         const busySlots = ['13:00', '16:00']; 
 
-        let selectedService = null;
-        let selectedMaster = null;
-        let selectedDate = null;
-        let selectedTime = null;
+        // Переменные выбора
+        let selectedService = null, selectedMaster = null, selectedDate = null, selectedTime = null;
 
-        // Рендер услуг с задержкой анимации
+        // --- НАВИГАЦИЯ ---
+        function switchTab(tabId, el) {
+            document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+            document.getElementById('page-' + tabId).classList.add('active');
+            document.querySelectorAll('.tab-item').forEach(t => t.classList.remove('active'));
+            el.classList.add('active');
+            
+            if (tabId === 'bookings') renderBookings();
+            tg.HapticFeedback.selectionChanged();
+        }
+
+        // --- ШТОРКА ---
+        function openSheet() {
+            document.getElementById('overlay').classList.add('active');
+            document.getElementById('bottom-sheet').classList.add('active');
+            tg.HapticFeedback.impactOccurred('medium');
+        }
+        function closeSheet() {
+            document.getElementById('overlay').classList.remove('active');
+            document.getElementById('bottom-sheet').classList.remove('active');
+        }
+
+        // --- РЕНДЕР ЭЛЕМЕНТОВ В ШТОРКЕ ---
         const servicesGrid = document.getElementById('services-grid');
-        services.forEach((s, i) => {
+        services.forEach(s => {
             const card = document.createElement('div');
-            card.className = 'card animate-up';
-            card.style.animationDelay = `${0.2 + i * 0.05}s`;
-            card.innerHTML = `<div class="card-emoji">${s.emoji}</div><div class="card-title">${s.name}</div><div class="card-price">${s.price} ₽</div><div class="card-duration">${s.duration} мин</div>`;
+            card.className = 'card';
+            card.innerHTML = `<div class="card-emoji">${s.emoji}</div><div class="card-title">${s.name}</div><div class="card-price">${s.price} ₽</div>`;
             card.onclick = () => { selectedService = s; updateUI(); };
             servicesGrid.appendChild(card);
         });
 
-        // Рендер мастеров
         const mastersScroll = document.getElementById('masters-scroll');
-        masters.forEach((m, i) => {
+        masters.forEach(m => {
             const card = document.createElement('div');
-            card.className = 'master-card animate-up';
-            card.style.animationDelay = `${0.3 + i * 0.05}s`;
-            card.innerHTML = `<div class="master-avatar">${m.emoji}</div><div class="master-name">${m.name}</div><div class="master-rating">⭐ ${m.rating}</div>`;
+            card.className = 'master-card';
+            card.innerHTML = `<div class="master-avatar">${m.emoji}</div><div class="master-name">${m.name}</div>`;
             card.onclick = () => { selectedMaster = m; updateUI(); };
             mastersScroll.appendChild(card);
         });
 
-        // Рендер дат
         const datesScroll = document.getElementById('dates-scroll');
-        dates.forEach((d, i) => {
+        dates.forEach(d => {
             const div = document.createElement('div');
-            div.className = 'date-pill animate-up';
-            div.style.animationDelay = `${0.4 + i * 0.05}s`;
+            div.className = 'date-pill';
             div.innerHTML = `<div class="date-day">${d.dayLabel}</div><div class="date-num">${d.numLabel}</div>`;
             div.onclick = () => { selectedDate = d; updateUI(); };
             datesScroll.appendChild(div);
         });
 
-        // Рендер времени
         const timeGrid = document.getElementById('time-grid');
         times.forEach(t => {
             const div = document.createElement('div');
-            div.className = 'time-pill';
-            div.textContent = t;
+            div.className = 'time-pill'; div.textContent = t;
             if (busySlots.includes(t)) div.classList.add('disabled');
             div.onclick = () => { selectedTime = t; updateUI(); };
             timeGrid.appendChild(div);
         });
 
-        // Обновление интерфейса
         function updateUI() {
-            // Подсветка выбранного
             document.querySelectorAll('#services-grid .card').forEach((el, i) => el.classList.toggle('active', services[i] === selectedService));
             document.querySelectorAll('.master-card').forEach((el, i) => el.classList.toggle('active', masters[i] === selectedMaster));
             document.querySelectorAll('.date-pill').forEach((el, i) => el.classList.toggle('active', dates[i] === selectedDate));
-            document.querySelectorAll('.time-pill').forEach((el, i) => el.classList.toggle('active', times[i] === selectedTime && !busySlots.includes(times[i])));
+            document.querySelectorAll('.time-pill').forEach((el, i) => el.classList.toggle('active', times[i] === selectedTime));
 
-            // Нижняя панель
-            const panel = document.getElementById('bottom-panel');
-            const serviceText = document.getElementById('selected-service');
-            const metaText = document.getElementById('selected-meta');
+            const info = document.getElementById('selected-info');
             const price = document.getElementById('total-price');
-            const btn = document.getElementById('btn-book');
+            const btn = document.getElementById('btn-confirm');
 
-            if (selectedService) {
-                panel.classList.add('visible');
-                price.textContent = `${selectedService.price} ₽`;
-                serviceText.textContent = selectedService.name;
+            if (selectedService) price.textContent = `${selectedService.price} ₽`;
 
-                let metaArr = [];
-                if (selectedMaster) metaArr.push(selectedMaster.name);
-                if (selectedDate) metaArr.push(selectedDate.numLabel);
-                if (selectedTime) metaArr.push(selectedTime);
-
-                if (metaArr.length > 0) {
-                    metaText.textContent = metaArr.join(' · ');
-                } else {
-                    metaText.textContent = 'Мастер, дата и время';
-                }
-
-                if (selectedService && selectedMaster && selectedDate && selectedTime) {
-                    btn.classList.remove('disabled');
-                    btn.textContent = 'Подтвердить запись';
-                } else {
-                    btn.classList.add('disabled');
-                    btn.textContent = 'Заполните все поля';
-                }
+            if (selectedService && selectedMaster && selectedDate && selectedTime) {
+                info.textContent = `${selectedService.name} • ${selectedMaster.name} • ${selectedDate.numLabel} • ${selectedTime}`;
+                btn.classList.remove('disabled');
             } else {
-                panel.classList.remove('visible');
+                info.textContent = 'Выберите параметры';
+                btn.classList.add('disabled');
             }
+            tg.HapticFeedback.selectionChanged();
         }
 
-        // Отправка данных в бота
+        // --- ОТПРАВКА В БОТ И СОХРАНЕНИЕ ---
         function bookAppointment() {
-            if (!selectedService || !selectedMaster || !selectedDate || !selectedTime) {
-                tg.showAlert('Пожалуйста, выберите всё до конца');
+            if (!selectedService || !selectedMaster || !selectedDate || !selectedTime) return;
+
+            const data = { action: 'book', service_id: selectedService.id, master_id: selectedMaster.id, date: selectedDate.full, time: selectedTime };
+
+            // 1. Сохраняем локально для "Моих записей"
+            let localBookings = JSON.parse(localStorage.getItem('barber_bookings') || '[]');
+            localBookings.push({
+                service: selectedService.name,
+                price: selectedService.price,
+                master: selectedMaster.name,
+                date: selectedDate.full,
+                dateFormatted: selectedDate.numLabel,
+                time: selectedTime
+            });
+            localStorage.setItem('barber_bookings', JSON.stringify(localBookings));
+
+            // 2. Отправляем в бота
+            tg.sendData(JSON.stringify(data));
+            tg.HapticFeedback.notificationOccurred('success');
+            
+            // 3. Сбрасываем и закрываем
+            setTimeout(() => { closeSheet(); switchTab('bookings', document.querySelectorAll('.tab-item')[1]); }, 500);
+        }
+
+        // --- РЕНДЕР "МОИ ЗАПИСИ" ---
+        function renderBookings() {
+            const list = document.getElementById('bookings-list');
+            const localBookings = JSON.parse(localStorage.getItem('barber_bookings') || '[]');
+            
+            if (localBookings.length === 0) {
+                list.innerHTML = `
+                    <div class="empty-state">
+                        <svg viewBox="0 0 24 24"><path d="M19 3h-1V1h-2v2H8V1H6v2H5c-1.11 0-1.99.9-1.99 2L3 19c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V8h14v11zM7 10h5v5H7z"/></svg>
+                        <p>У вас пока нет записей.<br>Самое время записаться!</p>
+                    </div>`;
                 return;
             }
 
-            const data = {
-                action: 'book',
-                service_id: selectedService.id,
-                master_id: selectedMaster.id,
-                date: selectedDate.full,
-                time: selectedTime
-            };
-
-            // Отправляем JSON в бота
-            tg.sendData(JSON.stringify(data));
-            
-            // Небольшая вибрация для тактильного отклика
-            tg.HapticFeedback.notificationOccurred('success');
+            list.innerHTML = '';
+            localBookings.reverse().forEach(b => {
+                const item = document.createElement('div');
+                item.className = 'booking-item';
+                item.innerHTML = `
+                    <div class="booking-header">
+                        <span class="booking-date">📅 ${b.dateFormatted} в ${b.time}</span>
+                        <span style="color:var(--accent); font-weight:700;">${b.price} ₽</span>
+                    </div>
+                    <div class="booking-info">
+                        ✂️ Услуга: <b>${b.service}</b><br>
+                        👨‍🔧 Мастер: <b>${b.master}</b>
+                    </div>
+                `;
+                list.appendChild(item);
+            });
         }
     </script>
 </body>
