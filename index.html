@@ -1,51 +1,375 @@
-# --- ИНТЕГРАЦИЯ MINI APP (Ловим данные из WebApp) ---
-@dp.message(F.web_app_data)
-async def web_app_data_handler(msg: Message):
-    try:
-        data = json.loads(msg.web_app_data.data)
-        
-        s = SERVICES.get(data["service_id"])
-        m = MASTERS.get(data["master_id"])
-        d_str = data["date"]
-        t_str = data["time"]
-        
-        if not s or not m:
-            await msg.answer("Ошибка данных.")
-            return
-
-        d_formatted = datetime.strptime(d_str, "%Y-%m-%d").strftime("%d.%m.%Y")
-
-        # Сохраняем запись
-        booking = {
-            "user_id": msg.from_user.id,
-            "user_name": msg.from_user.full_name,
-            "date": d_str,
-            "time": t_str,
-            "master": m["name"],
-            "service": s["name"],
-            "service_key": data["service_id"],
-            "price": s["price"],
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Примерный | Барбершоп</title>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <style>
+        :root {
+            --bg-color: #0f0f0f;
+            --card-bg: rgba(30, 30, 30, 0.6);
+            --text-main: #ffffff;
+            --text-muted: #8e8e93;
+            --accent: #ff4757;
+            --accent-gradient: linear-gradient(135deg, #ff4757 0%, #ff6b81 100%);
+            --glass-border: 1px solid rgba(255, 255, 255, 0.08);
+            --border-radius: 20px;
         }
-        bookings.append(booking)
 
-        # Отправляем подтверждение клиенту в бот
-        text = (
-            f"✅ <b>Вы записаны!</b>\n"
-            f"━━━━━━━━━━━━━━━━━━\n\n"
-            f"💈 <b>{SHOP_NAME}</b>\n\n"
-            f"{s['emoji']} {s['name']} — <b>{s['price']} ₽</b>\n"
-            f"👨‍🔧 Мастер: <b>{m['name']}</b>\n"
-            f"📅 <b>{d_formatted} в {t_str}</b>\n\n"
-            f"📍 {SHOP_ADDRESS}\n"
-            f"📞 {SHOP_PHONE}\n\n"
-            f"<i>Ждем вас!</i>"
-        )
-        await msg.answer(text, reply_markup=main_menu_kb())
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; -webkit-tap-highlight-color: transparent; }
 
-        # Уведомление админу (если задан)
-        if ADMIN_CHAT_ID:
-            await bot.send_message(ADMIN_CHAT_ID, f"🔔 <b>Новая запись (Mini App)!</b>\n👤 {msg.from_user.full_name}\n✂️ {s['name']} - {s['price']} ₽\n👨‍🔧 {m['name']}\n📅 {d_formatted} в {t_str}")
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            padding: 20px;
+            padding-bottom: 130px;
+            overflow-x: hidden;
+            /* Красивый градиентный фон */
+            background-image: 
+                radial-gradient(circle at 10% 10%, rgba(255, 71, 87, 0.1) 0%, transparent 50%),
+                radial-gradient(circle at 90% 90%, rgba(255, 107, 129, 0.1) 0%, transparent 50%);
+            background-attachment: fixed;
+        }
 
-    except Exception as e:
-        logging.error(f"Ошибка обработки WebApp: {e}")
-        await msg.answer("Произошла ошибка при сохранении записи. Попробуйте еще раз.")
+        /* Анимация появления элементов */
+        .animate-up {
+            animation: fadeUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+            opacity: 0;
+            transform: translateY(20px);
+        }
+
+        @keyframes fadeUp {
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Заголовок */
+        .header { display: flex; align-items: center; gap: 15px; margin-bottom: 30px; }
+        .header-logo { width: 56px; height: 56px; background: var(--accent-gradient); border-radius: 16px; display: flex; align-items: center; justify-content: center; font-size: 28px; box-shadow: 0 8px 25px rgba(255, 71, 87, 0.4); }
+        .header-title h1 { font-size: 22px; font-weight: 800; letter-spacing: -0.5px; }
+        .header-title p { font-size: 13px; color: var(--text-muted); margin-top: 4px; }
+
+        .section-title { font-size: 18px; font-weight: 700; margin: 25px 0 15px 0; display: flex; align-items: center; gap: 8px; }
+
+        /* Услуги */
+        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+        .card { 
+            background: var(--card-bg); 
+            backdrop-filter: blur(10px);
+            padding: 18px; 
+            border-radius: var(--border-radius); 
+            border: var(--glass-border); 
+            transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1); 
+            cursor: pointer; 
+            position: relative;
+            overflow: hidden;
+        }
+        .card::after { content: ''; position: absolute; inset: 0; background: var(--accent-gradient); opacity: 0; transition: opacity 0.3s; z-index: -1; }
+        .card:active { transform: scale(0.95); }
+        .card.active { border-color: var(--accent); box-shadow: 0 5px 20px rgba(255, 71, 87, 0.15); }
+        .card.active::after { opacity: 0.1; }
+        .card-emoji { font-size: 26px; margin-bottom: 10px; }
+        .card-title { font-size: 15px; font-weight: 600; margin-bottom: 6px; }
+        .card-price { font-size: 16px; font-weight: 800; color: var(--accent); }
+        .card-duration { font-size: 12px; color: var(--text-muted); margin-top: 4px; }
+
+        /* Мастера */
+        .masters-scroll { display: flex; gap: 12px; overflow-x: auto; padding-bottom: 10px; scroll-snap-type: x mandatory; scrollbar-width: none; }
+        .masters-scroll::-webkit-scrollbar { display: none; }
+        .master-card { 
+            min-width: 130px; 
+            background: var(--card-bg); 
+            backdrop-filter: blur(10px);
+            padding: 18px 15px; 
+            border-radius: var(--border-radius); 
+            text-align: center; 
+            border: var(--glass-border); 
+            transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1); 
+            cursor: pointer; 
+            scroll-snap-align: start;
+        }
+        .master-card:active { transform: scale(0.95); }
+        .master-card.active { border-color: var(--accent); box-shadow: 0 5px 20px rgba(255, 71, 87, 0.15); }
+        .master-avatar { 
+            width: 64px; height: 64px; 
+            border-radius: 50%; 
+            margin: 0 auto 12px auto; 
+            display: flex; align-items: center; justify-content: center; 
+            font-size: 32px; 
+            background: linear-gradient(135deg, #2c2c2e 0%, #1c1c1e 100%);
+            border: 2px solid rgba(255,255,255,0.05);
+        }
+        .master-card.active .master-avatar { border-color: var(--accent); background: var(--accent-gradient); }
+        .master-name { font-size: 15px; font-weight: 600; margin-bottom: 4px; }
+        .master-rating { font-size: 13px; color: #ffd700; font-weight: 600; }
+
+        /* Даты */
+        .dates-scroll { display: flex; gap: 10px; overflow-x: auto; padding-bottom: 10px; scroll-snap-type: x mandatory; scrollbar-width: none; }
+        .dates-scroll::-webkit-scrollbar { display: none; }
+        .date-pill { 
+            min-width: 76px; 
+            background: var(--card-bg); 
+            backdrop-filter: blur(10px);
+            padding: 14px 10px; 
+            border-radius: 16px; 
+            text-align: center; 
+            border: var(--glass-border); 
+            cursor: pointer; 
+            transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1); 
+            scroll-snap-align: start;
+        }
+        .date-pill:active { transform: scale(0.95); }
+        .date-pill.active { border-color: var(--accent); background: var(--accent-gradient); box-shadow: 0 5px 15px rgba(255, 71, 87, 0.3); }
+        .date-day { font-size: 12px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; }
+        .date-pill.active .date-day { color: #fff; opacity: 0.9; }
+        .date-num { font-size: 20px; font-weight: 800; margin-top: 4px; }
+
+        /* Время */
+        .time-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
+        .time-pill { 
+            background: var(--card-bg); 
+            backdrop-filter: blur(10px);
+            padding: 14px 0; 
+            border-radius: 14px; 
+            text-align: center; 
+            border: var(--glass-border); 
+            font-size: 15px; 
+            font-weight: 700; 
+            cursor: pointer; 
+            transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1); 
+        }
+        .time-pill:active { transform: scale(0.9); }
+        .time-pill.active { border-color: var(--accent); background: var(--accent-gradient); box-shadow: 0 5px 15px rgba(255, 71, 87, 0.3); }
+        .time-pill.disabled { opacity: 0.2; pointer-events: none; text-decoration: line-through; }
+
+        /* Нижняя плавающая панель */
+        .bottom-panel {
+            position: fixed; 
+            bottom: 0; left: 0; right: 0; 
+            background: rgba(18, 18, 18, 0.85); 
+            backdrop-filter: blur(20px); 
+            -webkit-backdrop-filter: blur(20px);
+            padding: 20px 20px 35px 20px; 
+            border-top: 1px solid rgba(255,255,255,0.1); 
+            display: flex; flex-direction: column; gap: 15px; 
+            transform: translateY(100%); 
+            transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+            box-shadow: 0 -10px 40px rgba(0,0,0,0.5);
+            z-index: 100;
+        }
+        .bottom-panel.visible { transform: translateY(0); }
+        .total-info { display: flex; justify-content: space-between; align-items: center; font-size: 15px; }
+        .selected-details { display: flex; flex-direction: column; gap: 4px; }
+        .selected-details span { font-weight: 600; color: var(--text-main); }
+        .selected-details small { color: var(--text-muted); font-size: 13px; }
+        .total-price { font-weight: 800; font-size: 22px; color: var(--accent); }
+        
+        .btn-book { 
+            width: 100%; 
+            background: var(--accent-gradient); 
+            color: white; 
+            border: none; 
+            padding: 18px; 
+            border-radius: 16px; 
+            font-size: 17px; 
+            font-weight: 700; 
+            cursor: pointer; 
+            box-shadow: 0 8px 25px rgba(255, 71, 87, 0.4); 
+            transition: all 0.2s; 
+        }
+        .btn-book:active { transform: scale(0.96); }
+        .btn-book.disabled { opacity: 0.5; pointer-events: none; background: #333; box-shadow: none; color: #888; }
+    </style>
+</head>
+<body>
+
+    <div class="header animate-up" style="animation-delay: 0.1s;">
+        <div class="header-logo">💈</div>
+        <div class="header-title">
+            <h1>Примерный</h1>
+            <p>Барбершоп, в который возвращаются</p>
+        </div>
+    </div>
+
+    <div class="section-title animate-up" style="animation-delay: 0.2s;">1. Услуга</div>
+    <div class="grid" id="services-grid"></div>
+
+    <div class="section-title animate-up" style="animation-delay: 0.3s;">2. Мастер</div>
+    <div class="masters-scroll" id="masters-scroll"></div>
+
+    <div class="section-title animate-up" style="animation-delay: 0.4s;">3. Дата</div>
+    <div class="dates-scroll" id="dates-scroll"></div>
+
+    <div class="section-title animate-up" style="animation-delay: 0.5s;">4. Время</div>
+    <div class="time-grid animate-up" id="time-grid" style="animation-delay: 0.5s;"></div>
+
+    <div class="bottom-panel" id="bottom-panel">
+        <div class="total-info">
+            <div class="selected-details">
+                <span id="selected-service">Выберите услугу</span>
+                <small id="selected-meta">Мастер, дата и время</small>
+            </div>
+            <div class="total-price" id="total-price">0 ₽</div>
+        </div>
+        <button class="btn-book disabled" id="btn-book" onclick="bookAppointment()">Подтвердить</button>
+    </div>
+
+    <script>
+        // Инициализация Telegram WebApp
+        const tg = window.Telegram.WebApp;
+        tg.expand();
+        tg.setHeaderColor('#0f0f0f');
+        tg.setBackgroundColor('#0f0f0f');
+
+        // Данные
+        const services = [
+            { id: 'haircut', name: 'Стрижка', price: 1500, duration: 45, emoji: '✂️' },
+            { id: 'beard', name: 'Борода', price: 800, duration: 30, emoji: '🧔' },
+            { id: 'combo', name: 'Стрижка + борода', price: 2000, duration: 75, emoji: '💈' },
+            { id: 'kids', name: 'Детская стрижка', price: 1000, duration: 30, emoji: '🧒' },
+            { id: 'shave', name: 'Бритьё', price: 700, duration: 30, emoji: '🪒' },
+        ];
+
+        const masters = [
+            { id: '1', name: 'Алексей', rating: '5.0', emoji: '👨‍🦱' },
+            { id: '2', name: 'Дмитрий', rating: '4.9', emoji: '👨‍🦲' },
+            { id: '3', name: 'Артём', rating: '5.0', emoji: '🧔' },
+            { id: '4', name: 'Иван', rating: '4.8', emoji: '👦' },
+            { id: '5', name: 'Максим', rating: '5.0', emoji: '👱' },
+        ];
+
+        const dates = [];
+        const weekdays = ['Вс', 'Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб'];
+        const today = new Date();
+        for (let i = 0; i < 7; i++) {
+            const d = new Date(today);
+            d.setDate(today.getDate() + i);
+            let label = weekdays[d.getDay()];
+            if (i === 0) label = 'Сегодня';
+            if (i === 1) label = 'Завтра';
+            dates.push({
+                full: d.toISOString().split('T')[0],
+                dayLabel: label,
+                numLabel: d.getDate() + '.' + (d.getMonth() + 1)
+            });
+        }
+
+        const times = ['10:00', '11:00', '12:00', '13:00', '14:00', '15:00', '16:00', '17:00', '18:00', '19:00', '20:00'];
+        const busySlots = ['13:00', '16:00']; 
+
+        let selectedService = null;
+        let selectedMaster = null;
+        let selectedDate = null;
+        let selectedTime = null;
+
+        // Рендер услуг с задержкой анимации
+        const servicesGrid = document.getElementById('services-grid');
+        services.forEach((s, i) => {
+            const card = document.createElement('div');
+            card.className = 'card animate-up';
+            card.style.animationDelay = `${0.2 + i * 0.05}s`;
+            card.innerHTML = `<div class="card-emoji">${s.emoji}</div><div class="card-title">${s.name}</div><div class="card-price">${s.price} ₽</div><div class="card-duration">${s.duration} мин</div>`;
+            card.onclick = () => { selectedService = s; updateUI(); };
+            servicesGrid.appendChild(card);
+        });
+
+        // Рендер мастеров
+        const mastersScroll = document.getElementById('masters-scroll');
+        masters.forEach((m, i) => {
+            const card = document.createElement('div');
+            card.className = 'master-card animate-up';
+            card.style.animationDelay = `${0.3 + i * 0.05}s`;
+            card.innerHTML = `<div class="master-avatar">${m.emoji}</div><div class="master-name">${m.name}</div><div class="master-rating">⭐ ${m.rating}</div>`;
+            card.onclick = () => { selectedMaster = m; updateUI(); };
+            mastersScroll.appendChild(card);
+        });
+
+        // Рендер дат
+        const datesScroll = document.getElementById('dates-scroll');
+        dates.forEach((d, i) => {
+            const div = document.createElement('div');
+            div.className = 'date-pill animate-up';
+            div.style.animationDelay = `${0.4 + i * 0.05}s`;
+            div.innerHTML = `<div class="date-day">${d.dayLabel}</div><div class="date-num">${d.numLabel}</div>`;
+            div.onclick = () => { selectedDate = d; updateUI(); };
+            datesScroll.appendChild(div);
+        });
+
+        // Рендер времени
+        const timeGrid = document.getElementById('time-grid');
+        times.forEach(t => {
+            const div = document.createElement('div');
+            div.className = 'time-pill';
+            div.textContent = t;
+            if (busySlots.includes(t)) div.classList.add('disabled');
+            div.onclick = () => { selectedTime = t; updateUI(); };
+            timeGrid.appendChild(div);
+        });
+
+        // Обновление интерфейса
+        function updateUI() {
+            // Подсветка выбранного
+            document.querySelectorAll('#services-grid .card').forEach((el, i) => el.classList.toggle('active', services[i] === selectedService));
+            document.querySelectorAll('.master-card').forEach((el, i) => el.classList.toggle('active', masters[i] === selectedMaster));
+            document.querySelectorAll('.date-pill').forEach((el, i) => el.classList.toggle('active', dates[i] === selectedDate));
+            document.querySelectorAll('.time-pill').forEach((el, i) => el.classList.toggle('active', times[i] === selectedTime && !busySlots.includes(times[i])));
+
+            // Нижняя панель
+            const panel = document.getElementById('bottom-panel');
+            const serviceText = document.getElementById('selected-service');
+            const metaText = document.getElementById('selected-meta');
+            const price = document.getElementById('total-price');
+            const btn = document.getElementById('btn-book');
+
+            if (selectedService) {
+                panel.classList.add('visible');
+                price.textContent = `${selectedService.price} ₽`;
+                serviceText.textContent = selectedService.name;
+
+                let metaArr = [];
+                if (selectedMaster) metaArr.push(selectedMaster.name);
+                if (selectedDate) metaArr.push(selectedDate.numLabel);
+                if (selectedTime) metaArr.push(selectedTime);
+
+                if (metaArr.length > 0) {
+                    metaText.textContent = metaArr.join(' · ');
+                } else {
+                    metaText.textContent = 'Мастер, дата и время';
+                }
+
+                if (selectedService && selectedMaster && selectedDate && selectedTime) {
+                    btn.classList.remove('disabled');
+                    btn.textContent = 'Подтвердить запись';
+                } else {
+                    btn.classList.add('disabled');
+                    btn.textContent = 'Заполните все поля';
+                }
+            } else {
+                panel.classList.remove('visible');
+            }
+        }
+
+        // Отправка данных в бота
+        function bookAppointment() {
+            if (!selectedService || !selectedMaster || !selectedDate || !selectedTime) {
+                tg.showAlert('Пожалуйста, выберите всё до конца');
+                return;
+            }
+
+            const data = {
+                action: 'book',
+                service_id: selectedService.id,
+                master_id: selectedMaster.id,
+                date: selectedDate.full,
+                time: selectedTime
+            };
+
+            // Отправляем JSON в бота
+            tg.sendData(JSON.stringify(data));
+            
+            // Небольшая вибрация для тактильного отклика
+            tg.HapticFeedback.notificationOccurred('success');
+        }
+    </script>
+</body>
+</html>
