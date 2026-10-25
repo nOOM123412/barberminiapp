@@ -53,12 +53,12 @@
         .date-day { font-size: 12px; color: var(--text-muted); }
         .date-num { font-size: 18px; font-weight: 800; margin-top: 4px; }
         .time-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
+        
+        /* ИСПРАВЛЕНИЕ: Стили времени */
         .time-pill { background: var(--card-bg); padding: 12px 0; border-radius: 12px; text-align: center; border: var(--glass-border); font-size: 14px; font-weight: 700; cursor: pointer; transition: 0.3s; }
-        
-        /* ИСПРАВЛЕНИЕ: Добавлен стиль для активного времени */
-        .time-pill.active { border-color: var(--accent); background: var(--accent-gradient); color: white; box-shadow: 0 4px 15px rgba(255, 71, 87, 0.3); }
-        
         .time-pill.disabled { opacity: 0.3; pointer-events: none; text-decoration: line-through; }
+        .time-pill.active { border-color: var(--accent) !important; background: var(--accent-gradient) !important; color: white !important; box-shadow: 0 4px 15px rgba(255, 71, 87, 0.3); }
+
         .sheet-footer { padding: 15px 20px 30px 20px; background: #1a1a1a; border-top: 1px solid rgba(255,255,255,0.05); }
         .total-info { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
         .total-price { font-size: 22px; font-weight: 800; color: var(--accent); }
@@ -149,7 +149,7 @@
             document.querySelectorAll('.tab-item').forEach(t => t.classList.remove('active'));
             el.classList.add('active');
             if (tabId === 'bookings') renderBookings();
-            tg.HapticFeedback.selectionChanged(); // Одна вибрация при переключении
+            tg.HapticFeedback.selectionChanged(); 
         }
 
         function openSheet() {
@@ -159,14 +159,13 @@
                 if (!err && value) { try { localBookings = JSON.parse(value); } catch(e) {} }
                 renderTimeSlots();
             });
-            tg.HapticFeedback.impactOccurred('medium'); // Одна вибрация при открытии
+            tg.HapticFeedback.impactOccurred('medium'); 
         }
         function closeSheet() {
             document.getElementById('overlay').classList.remove('active');
             document.getElementById('bottom-sheet').classList.remove('active');
         }
 
-        // Рендер элементов
         const servicesGrid = document.getElementById('services-grid');
         services.forEach(s => {
             const card = document.createElement('div'); card.className = 'card';
@@ -191,7 +190,6 @@
             datesScroll.appendChild(div);
         });
 
-        // Время
         const timeGrid = document.getElementById('time-grid');
         function renderTimeSlots() {
             timeGrid.innerHTML = '';
@@ -214,7 +212,11 @@
                     updateUI();
                 }
 
-                div.onclick = () => { selectedTime = t; updateUI(); };
+                div.onclick = () => { 
+                    selectedTime = t; 
+                    updateUI(); 
+                    tg.HapticFeedback.selectionChanged(); // Вибрация при выборе времени
+                };
                 timeGrid.appendChild(div);
             });
             if (selectedTime) {
@@ -238,9 +240,6 @@
             } else {
                 info.textContent = 'Выберите параметры'; btn.classList.add('disabled');
             }
-            
-            // ИСПРАВЛЕНИЕ: Убрал вибрацию отсюда, чтобы не было двойного щелчка
-            // tg.HapticFeedback.selectionChanged(); 
         }
 
         function bookAppointment() {
@@ -267,7 +266,7 @@
                 time: selectedTime 
             };
             tg.sendData(JSON.stringify(data));
-            tg.HapticFeedback.notificationOccurred('success'); // Одна вибрация при успехе
+            tg.HapticFeedback.notificationOccurred('success');
             
             setTimeout(() => { 
                 closeSheet(); 
@@ -283,7 +282,7 @@
             const data = { action: 'cancel', booking_id: id };
             tg.sendData(JSON.stringify(data));
             
-            tg.HapticFeedback.notificationOccurred('warning'); // Одна вибрация при отмене
+            tg.HapticFeedback.notificationOccurred('warning');
             renderBookings();
             renderTimeSlots();
         }
