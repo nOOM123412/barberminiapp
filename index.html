@@ -6,607 +6,266 @@
     <title>Примерный | Барбершоп</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
-        :root {
-            --bg-color: #12161f; /* Глубокий сине-серый */
-            --card-bg: #1c222e;
-            --card-hover: #252d3d;
-            --text-main: #f0f4f8;
-            --text-muted: #8b9bb4;
-            --accent: #3b82f6; /* Яркий синий */
-            --accent-gradient: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
-            --border-color: rgba(255, 255, 255, 0.06);
-            --border-radius: 18px;
-        }
-
+        /* ... ВСЕ СТИЛИ ОСТАЮТСЯ КАК БЫЛИ (сине-серые) ... */
+        :root { --bg-color: #12161f; --card-bg: #1c222e; --card-hover: #252d3d; --text-main: #f0f4f8; --text-muted: #8b9bb4; --accent: #3b82f6; --accent-gradient: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%); --border-color: rgba(255, 255, 255, 0.06); --border-radius: 18px; }
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; -webkit-tap-highlight-color: transparent; }
-
-        body {
-            background-color: var(--bg-color);
-            color: var(--text-main);
-            overflow-x: hidden;
-            height: 100vh;
-            display: flex;
-            flex-direction: column;
-        }
-
-        /* Общие стили страниц */
+        body { background-color: var(--bg-color); color: var(--text-main); overflow-x: hidden; height: 100vh; display: flex; flex-direction: column; }
         .page { display: none; flex: 1; padding: 24px 20px; padding-bottom: 100px; overflow-y: auto; }
         .page.active { display: block; animation: fadeIn 0.4s ease; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-
         .header { margin-bottom: 30px; }
         .header h1 { font-size: 26px; font-weight: 800; letter-spacing: -0.5px; margin-bottom: 6px; }
         .header p { font-size: 14px; color: var(--text-muted); }
-
-        /* Плашки на главной */
         .menu-grid { display: flex; flex-direction: column; gap: 12px; }
-        .menu-item {
-            background-color: var(--card-bg);
-            border: 1px solid var(--border-color);
-            padding: 20px;
-            border-radius: var(--border-radius);
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            cursor: pointer;
-            transition: background 0.2s, transform 0.1s;
-        }
+        .menu-item { background-color: var(--card-bg); border: 1px solid var(--border-color); padding: 20px; border-radius: var(--border-radius); display: flex; align-items: center; justify-content: space-between; cursor: pointer; transition: background 0.2s, transform 0.1s; }
         .menu-item:active { transform: scale(0.98); background-color: var(--card-hover); }
         .menu-item-left { display: flex; align-items: center; gap: 16px; }
-        .menu-icon {
-            width: 44px; height: 44px;
-            background: rgba(59, 130, 246, 0.15);
-            color: var(--accent);
-            border-radius: 12px;
-            display: flex; align-items: center; justify-content: center;
-            font-size: 20px;
-        }
+        .menu-icon { width: 44px; height: 44px; background: rgba(59, 130, 246, 0.15); color: var(--accent); border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 20px; }
         .menu-text h3 { font-size: 16px; font-weight: 600; margin-bottom: 4px; }
         .menu-text p { font-size: 13px; color: var(--text-muted); }
         .menu-arrow { color: var(--text-muted); font-size: 18px; font-weight: bold; }
-
-        /* Шаги записи */
         .step-container { display: flex; flex-direction: column; height: 100%; }
         .step-title { font-size: 20px; font-weight: 700; margin-bottom: 20px; }
-        
         .options-list { display: flex; flex-direction: column; gap: 10px; margin-bottom: 20px; }
-        .option-card {
-            background: var(--card-bg);
-            border: 1px solid var(--border-color);
-            padding: 16px;
-            border-radius: 14px;
-            cursor: pointer;
-            transition: 0.2s;
-            display: flex; justify-content: space-between; align-items: center;
-        }
+        .option-card { background: var(--card-bg); border: 1px solid var(--border-color); padding: 16px; border-radius: 14px; cursor: pointer; transition: 0.2s; display: flex; justify-content: space-between; align-items: center; }
         .option-card.active { border-color: var(--accent); background: rgba(59, 130, 246, 0.1); }
         .option-card-left h4 { font-size: 15px; font-weight: 600; margin-bottom: 4px; }
         .option-card-left p { font-size: 13px; color: var(--text-muted); }
         .option-card-right { font-size: 15px; font-weight: 700; color: var(--accent); }
-
-        .btn-next {
-            width: 100%; background: var(--accent-gradient); color: white;
-            border: none; padding: 16px; border-radius: 14px;
-            font-size: 16px; font-weight: 700; cursor: pointer;
-            transition: 0.2s; margin-top: auto;
-        }
+        .btn-next { width: 100%; background: var(--accent-gradient); color: white; border: none; padding: 16px; border-radius: 14px; font-size: 16px; font-weight: 700; cursor: pointer; transition: 0.2s; margin-top: auto; }
         .btn-next:active { transform: scale(0.97); }
         .btn-next.disabled { opacity: 0.4; pointer-events: none; }
-
-        /* Время */
         .time-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 20px; }
-        .time-pill {
-            background: var(--card-bg); border: 1px solid var(--border-color);
-            padding: 12px 0; border-radius: 12px; text-align: center;
-            font-size: 14px; font-weight: 600; cursor: pointer; transition: 0.2s;
-        }
+        .time-pill { background: var(--card-bg); border: 1px solid var(--border-color); padding: 12px 0; border-radius: 12px; text-align: center; font-size: 14px; font-weight: 600; cursor: pointer; transition: 0.2s; }
         .time-pill.active { border-color: var(--accent); background: var(--accent); color: white; }
         .time-pill.disabled { opacity: 0.3; pointer-events: none; text-decoration: line-through; }
-
-        /* Страница записей */
-        .booking-item {
-            background: var(--card-bg); border: 1px solid var(--border-color);
-            border-radius: var(--border-radius); padding: 20px; margin-bottom: 12px;
-            animation: fadeIn 0.4s ease;
-        }
+        .booking-item { background: var(--card-bg); border: 1px solid var(--border-color); border-radius: var(--border-radius); padding: 20px; margin-bottom: 12px; animation: fadeIn 0.4s ease; }
         .booking-header { display: flex; justify-content: space-between; margin-bottom: 12px; border-bottom: 1px solid var(--border-color); padding-bottom: 12px; }
         .booking-date { font-weight: 700; color: var(--accent); font-size: 15px; }
         .booking-info { font-size: 14px; color: var(--text-muted); line-height: 1.6; }
         .booking-info b { color: var(--text-main); }
         .btn-cancel { background: rgba(239, 68, 68, 0.1); color: #ef4444; border: 1px solid rgba(239, 68, 68, 0.3); padding: 10px; border-radius: 10px; font-size: 13px; font-weight: 600; cursor: pointer; margin-top: 12px; width: 100%; transition: 0.2s; }
         .btn-cancel:active { background: #ef4444; color: white; }
-        
         .empty-state { text-align: center; color: var(--text-muted); margin-top: 50px; }
         .empty-state p { font-size: 15px; margin-top: 10px; }
-
-        /* Адреса (Аккордеон с картами) */
-        .address-card {
-            background: var(--card-bg); border: 1px solid var(--border-color);
-            border-radius: var(--border-radius); margin-bottom: 15px; overflow: hidden;
-            transition: 0.3s;
-        }
-        .address-header {
-            padding: 20px; display: flex; justify-content: space-between; align-items: center; cursor: pointer;
-        }
+        .address-card { background: var(--card-bg); border: 1px solid var(--border-color); border-radius: var(--border-radius); margin-bottom: 15px; overflow: hidden; transition: 0.3s; }
+        .address-header { padding: 20px; display: flex; justify-content: space-between; align-items: center; cursor: pointer; }
         .address-header h3 { font-size: 16px; font-weight: 600; }
         .address-header p { font-size: 13px; color: var(--text-muted); margin-top: 4px; }
-        .address-content {
-            max-height: 0; overflow: hidden; transition: max-height 0.4s ease;
-            padding: 0 20px;
-        }
+        .address-content { max-height: 0; overflow: hidden; transition: max-height 0.4s ease; padding: 0 20px; }
         .address-content.open { max-height: 300px; padding-bottom: 20px; }
-        .map-container {
-            width: 100%; height: 180px; border-radius: 12px; overflow: hidden; margin-top: 10px;
-            background: #1e293b; display: flex; align-items: center; justify-content: center;
-            border: 1px solid var(--border-color); position: relative;
-        }
-        /* Имитация карты */
-        .map-container::before {
-            content: ''; position: absolute; inset: 0;
-            background-image: 
-                linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px),
-                linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px);
-            background-size: 20px 20px;
-        }
-        .map-pin {
-            position: absolute; width: 20px; height: 20px; background: var(--accent);
-            border-radius: 50%; box-shadow: 0 0 0 6px rgba(59,130,246,0.2);
-            z-index: 2;
-        }
+        .map-container { width: 100%; height: 180px; border-radius: 12px; overflow: hidden; margin-top: 10px; background: #1e293b; display: flex; align-items: center; justify-content: center; border: 1px solid var(--border-color); position: relative; }
+        .map-container::before { content: ''; position: absolute; inset: 0; background-image: linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px); background-size: 20px 20px; }
+        .map-pin { position: absolute; width: 20px; height: 20px; background: var(--accent); border-radius: 50%; box-shadow: 0 0 0 6px rgba(59,130,246,0.2); z-index: 2; }
         .map-label { position: absolute; bottom: 15px; background: #1c222e; padding: 6px 12px; border-radius: 20px; font-size: 12px; font-weight: 600; color: var(--text-main); border: 1px solid var(--border-color); z-index: 2; }
-
-        /* Поддержка */
         .support-form { display: flex; flex-direction: column; gap: 15px; }
-        .support-input {
-            width: 100%; height: 120px; background: var(--card-bg); border: 1px solid var(--border-color);
-            border-radius: 14px; padding: 16px; color: var(--text-main); font-size: 15px; resize: none;
-            font-family: inherit; outline: none; transition: 0.2s;
-        }
+        .support-input { width: 100%; height: 120px; background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 14px; padding: 16px; color: var(--text-main); font-size: 15px; resize: none; font-family: inherit; outline: none; transition: 0.2s; }
         .support-input:focus { border-color: var(--accent); }
         .btn-send { width: 100%; background: var(--accent-gradient); color: white; border: none; padding: 16px; border-radius: 14px; font-size: 16px; font-weight: 700; cursor: pointer; transition: 0.2s; }
         .btn-send:active { transform: scale(0.97); }
-
-        /* Кнопка "Назад" в шапке */
-        .back-btn {
-            display: inline-flex; align-items: center; gap: 8px; color: var(--text-muted);
-            font-size: 14px; font-weight: 600; cursor: pointer; margin-bottom: 20px; transition: 0.2s;
-        }
+        .back-btn { display: inline-flex; align-items: center; gap: 8px; color: var(--text-muted); font-size: 14px; font-weight: 600; cursor: pointer; margin-bottom: 20px; transition: 0.2s; }
         .back-btn:active { color: var(--text-main); }
-
-        /* Нижняя навигация (Таб-бар) */
-        .tab-bar {
-            position: fixed; bottom: 0; left: 0; right: 0; background: rgba(18, 22, 31, 0.95);
-            backdrop-filter: blur(15px); border-top: 1px solid var(--border-color);
-            display: flex; justify-content: space-around; padding: 12px 0 25px 0; z-index: 50;
-        }
+        .tab-bar { position: fixed; bottom: 0; left: 0; right: 0; background: rgba(18, 22, 31, 0.95); backdrop-filter: blur(15px); border-top: 1px solid var(--border-color); display: flex; justify-content: space-around; padding: 12px 0 25px 0; z-index: 50; }
         .tab-item { display: flex; flex-direction: column; align-items: center; gap: 4px; color: var(--text-muted); font-size: 11px; font-weight: 600; cursor: pointer; transition: 0.2s; }
         .tab-item.active { color: var(--accent); }
         .tab-item svg { width: 22px; height: 22px; fill: currentColor; }
-
     </style>
 </head>
 <body>
-
-    <!-- СТРАНИЦА 1: ГЛАВНАЯ -->
+    <!-- ... HTML ОСТАЕТСЯ КАК БЫЛО ... -->
     <div class="page active" id="page-home">
-        <div class="header">
-            <h1>Примерный</h1>
-            <p>Барбершоп, в который возвращаются</p>
-        </div>
+        <div class="header"><h1>Примерный</h1><p>Барбершоп, в который возвращаются</p></div>
         <div class="menu-grid">
-            <div class="menu-item" onclick="switchTab('booking', document.getElementById('tab-book'))">
-                <div class="menu-item-left">
-                    <div class="menu-icon">✂️</div>
-                    <div class="menu-text">
-                        <h3>Записаться</h3>
-                        <p>Выбрать услугу и время</p>
-                    </div>
-                </div>
-                <div class="menu-arrow">›</div>
-            </div>
-            <div class="menu-item" onclick="switchTab('bookings', document.getElementById('tab-bookings'))">
-                <div class="menu-item-left">
-                    <div class="menu-icon">📅</div>
-                    <div class="menu-text">
-                        <h3>Мои записи</h3>
-                        <p>Управление визитами</p>
-                    </div>
-                </div>
-                <div class="menu-arrow">›</div>
-            </div>
-            <div class="menu-item" onclick="switchTab('addresses', document.getElementById('tab-addresses'))">
-                <div class="menu-item-left">
-                    <div class="menu-icon">📍</div>
-                    <div class="menu-text">
-                        <h3>Адреса</h3>
-                        <p>Наши филиалы на карте</p>
-                    </div>
-                </div>
-                <div class="menu-arrow">›</div>
-            </div>
-            <div class="menu-item" onclick="switchTab('support', document.getElementById('tab-support'))">
-                <div class="menu-item-left">
-                    <div class="menu-icon">💬</div>
-                    <div class="menu-text">
-                        <h3>Поддержка</h3>
-                        <p>Задать вопрос администратору</p>
-                    </div>
-                </div>
-                <div class="menu-arrow">›</div>
-            </div>
+            <div class="menu-item" onclick="switchTab('booking', document.getElementById('tab-book'))"><div class="menu-item-left"><div class="menu-icon">✂️</div><div class="menu-text"><h3>Записаться</h3><p>Выбрать услугу и время</p></div></div><div class="menu-arrow">›</div></div>
+            <div class="menu-item" onclick="switchTab('bookings', document.getElementById('tab-bookings'))"><div class="menu-item-left"><div class="menu-icon">📅</div><div class="menu-text"><h3>Мои записи</h3><p>Управление визитами</p></div></div><div class="menu-arrow">›</div></div>
+            <div class="menu-item" onclick="switchTab('addresses', document.getElementById('tab-addresses'))"><div class="menu-item-left"><div class="menu-icon">📍</div><div class="menu-text"><h3>Адреса</h3><p>Наши филиалы на карте</p></div></div><div class="menu-arrow">›</div></div>
+            <div class="menu-item" onclick="switchTab('support', document.getElementById('tab-support'))"><div class="menu-item-left"><div class="menu-icon">💬</div><div class="menu-text"><h3>Поддержка</h3><p>Задать вопрос администратору</p></div></div><div class="menu-arrow">›</div></div>
         </div>
     </div>
-
-    <!-- СТРАНИЦА 2: ЗАПИСЬ (ПОШАГОВО) -->
     <div class="page" id="page-booking">
         <div class="back-btn" onclick="switchTab('home', document.getElementById('tab-home'))">‹ На главную</div>
-        
-        <div id="step-1" class="step-container active">
-            <div class="step-title">Шаг 1. Выберите услугу</div>
-            <div class="options-list" id="services-list"></div>
-            <button class="btn-next disabled" id="btn-next-1" onclick="goToStep(2)">Далее</button>
-        </div>
-
-        <div id="step-2" class="step-container" style="display:none;">
-            <div class="step-title">Шаг 2. Выберите мастера</div>
-            <div class="options-list" id="masters-list"></div>
-            <button class="btn-next disabled" id="btn-next-2" onclick="goToStep(3)">Далее</button>
-        </div>
-
-        <div id="step-3" class="step-container" style="display:none;">
-            <div class="step-title">Шаг 3. Выберите дату</div>
-            <div class="options-list" id="dates-list" style="display:grid; grid-template-columns: 1fr 1fr;"></div>
-            <button class="btn-next disabled" id="btn-next-3" onclick="goToStep(4)">Далее</button>
-        </div>
-
-        <div id="step-4" class="step-container" style="display:none;">
-            <div class="step-title">Шаг 4. Выберите время</div>
-            <div class="time-grid" id="times-list"></div>
-            <button class="btn-next disabled" id="btn-next-4" onclick="finishBooking()">Подтвердить запись</button>
-        </div>
+        <div id="step-1" class="step-container active"><div class="step-title">Шаг 1. Выберите услугу</div><div class="options-list" id="services-list"></div><button class="btn-next disabled" id="btn-next-1" onclick="goToStep(2)">Далее</button></div>
+        <div id="step-2" class="step-container" style="display:none;"><div class="step-title">Шаг 2. Выберите мастера</div><div class="options-list" id="masters-list"></div><button class="btn-next disabled" id="btn-next-2" onclick="goToStep(3)">Далее</button></div>
+        <div id="step-3" class="step-container" style="display:none;"><div class="step-title">Шаг 3. Выберите дату</div><div class="options-list" id="dates-list" style="display:grid; grid-template-columns: 1fr 1fr;"></div><button class="btn-next disabled" id="btn-next-3" onclick="goToStep(4)">Далее</button></div>
+        <div id="step-4" class="step-container" style="display:none;"><div class="step-title">Шаг 4. Выберите время</div><div class="time-grid" id="times-list"></div><button class="btn-next disabled" id="btn-next-4" onclick="finishBooking()">Подтвердить запись</button></div>
     </div>
-
-    <!-- СТРАНИЦА 3: МОИ ЗАПИСИ -->
-    <div class="page" id="page-bookings">
-        <div class="back-btn" onclick="switchTab('home', document.getElementById('tab-home'))">‹ На главную</div>
-        <div class="header"><h1>Мои записи</h1><p>Ваши визиты в «Примерный»</p></div>
-        <div id="bookings-container"></div>
-    </div>
-
-    <!-- СТРАНИЦА 4: АДРЕСА -->
-    <div class="page" id="page-addresses">
-        <div class="back-btn" onclick="switchTab('home', document.getElementById('tab-home'))">‹ На главную</div>
-        <div class="header"><h1>Наши адреса</h1><p>Выберите удобный филиал</p></div>
-        
-        <div class="address-card">
-            <div class="address-header" onclick="toggleAddress(this)">
-                <div>
-                    <h3>Улица Пушкина, 15</h3>
-                    <p>Метро Чеховская · 5 мин пешком</p>
-                </div>
-                <div style="color:var(--text-muted); font-size:20px;" class="arrow">›</div>
-            </div>
-            <div class="address-content">
-                <div class="map-container">
-                    <div class="map-pin" style="top: 40%; left: 50%;"></div>
-                    <div class="map-label">Пушкина, 15</div>
-                </div>
-            </div>
-        </div>
-
-        <div class="address-card">
-            <div class="address-header" onclick="toggleAddress(this)">
-                <div>
-                    <h3>Улица Примерная, 1</h3>
-                    <p>Метро Тверская · 3 мин пешком</p>
-                </div>
-                <div style="color:var(--text-muted); font-size:20px;" class="arrow">›</div>
-            </div>
-            <div class="address-content">
-                <div class="map-container">
-                    <div class="map-pin" style="top: 60%; left: 30%;"></div>
-                    <div class="map-label">Примерная, 1</div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- СТРАНИЦА 5: ПОДДЕРЖКА -->
-    <div class="page" id="page-support">
-        <div class="back-btn" onclick="switchTab('home', document.getElementById('tab-home'))">‹ На главную</div>
-        <div class="header"><h1>Поддержка</h1><p>Опишите проблему, и мы свяжемся с вами</p></div>
-        
-        <div class="support-form">
-            <textarea class="support-input" id="support-text" placeholder="Например: не пришло подтверждение записи или хочу перенести время..."></textarea>
-            <button class="btn-send" onclick="sendSupport()">Отправить сообщение</button>
-        </div>
-    </div>
-
-    <!-- НИЖНЯЯ НАВИГАЦИЯ -->
-    <div class="tab-bar">
-        <div class="tab-item active" id="tab-home" onclick="switchTab('home', this)">
-            <svg viewBox="0 0 24 24"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg><span>Главная</span>
-        </div>
-        <div class="tab-item" id="tab-book" onclick="switchTab('booking', this)">
-            <svg viewBox="0 0 24 24"><path d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z"/></svg><span>Запись</span>
-        </div>
-        <div class="tab-item" id="tab-bookings" onclick="switchTab('bookings', this)">
-            <svg viewBox="0 0 24 24"><path d="M19 3h-1V1h-2v2H8V1H6v2H5c-1.11 0-1.99.9-1.99 2L3 19c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V8h14v11zM7 10h5v5H7z"/></svg><span>Записи</span>
-        </div>
-        <div class="tab-item" id="tab-addresses" onclick="switchTab('addresses', this)">
-            <svg viewBox="0 0 24 24"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg><span>Адреса</span>
-        </div>
-        <div class="tab-item" id="tab-support" onclick="switchTab('support', this)">
-            <svg viewBox="0 0 24 24"><path d="M20 2H4c-1.1 0-1.99.9-1.99 2L2 22l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-2 12H6v-2h12v2zm0-3H6V9h12v2zm0-3H6V6h12v2z"/></svg><span>Поддержка</span>
-        </div>
-    </div>
+    <div class="page" id="page-bookings"><div class="back-btn" onclick="switchTab('home', document.getElementById('tab-home'))">‹ На главную</div><div class="header"><h1>Мои записи</h1><p>Ваши визиты в «Примерный»</p></div><div id="bookings-container"></div></div>
+    <div class="page" id="page-addresses"><div class="back-btn" onclick="switchTab('home', document.getElementById('tab-home'))">‹ На главную</div><div class="header"><h1>Наши адреса</h1><p>Выберите удобный филиал</p></div><div class="address-card"><div class="address-header" onclick="toggleAddress(this)"><div><h3>Улица Пушкина, 15</h3><p>Метро Чеховская · 5 мин пешком</p></div><div style="color:var(--text-muted); font-size:20px;" class="arrow">›</div></div><div class="address-content"><div class="map-container"><div class="map-pin" style="top: 40%; left: 50%;"></div><div class="map-label">Пушкина, 15</div></div></div></div><div class="address-card"><div class="address-header" onclick="toggleAddress(this)"><div><h3>Улица Примерная, 1</h3><p>Метро Тверская · 3 мин пешком</p></div><div style="color:var(--text-muted); font-size:20px;" class="arrow">›</div></div><div class="address-content"><div class="map-container"><div class="map-pin" style="top: 60%; left: 30%;"></div><div class="map-label">Примерная, 1</div></div></div></div></div>
+    <div class="page" id="page-support"><div class="back-btn" onclick="switchTab('home', document.getElementById('tab-home'))">‹ На главную</div><div class="header"><h1>Поддержка</h1><p>Опишите проблему, и мы свяжемся с вами</p></div><div class="support-form"><textarea class="support-input" id="support-text" placeholder="Например: не пришло подтверждение записи или хочу перенести время..."></textarea><button class="btn-send" onclick="sendSupport()">Отправить сообщение</button></div></div>
+    <div class="tab-bar"><div class="tab-item active" id="tab-home" onclick="switchTab('home', this)"><svg viewBox="0 0 24 24"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg><span>Главная</span></div><div class="tab-item" id="tab-book" onclick="switchTab('booking', this)"><svg viewBox="0 0 24 24"><path d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z"/></svg><span>Запись</span></div><div class="tab-item" id="tab-bookings" onclick="switchTab('bookings', this)"><svg viewBox="0 0 24 24"><path d="M19 3h-1V1h-2v2H8V1H6v2H5c-1.11 0-1.99.9-1.99 2L3 19c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V8h14v11zM7 10h5v5H7z"/></svg><span>Записи</span></div><div class="tab-item" id="tab-addresses" onclick="switchTab('addresses', this)"><svg viewBox="0 0 24 24"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg><span>Адреса</span></div><div class="tab-item" id="tab-support" onclick="switchTab('support', this)"><svg viewBox="0 0 24 24"><path d="M20 2H4c-1.1 0-1.99.9-1.99 2L2 22l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-2 12H6v-2h12v2zm0-3H6V9h12v2zm0-3H6V6h12v2z"/></svg><span>Поддержка</span></div></div>
 
     <script>
         const tg = window.Telegram.WebApp;
         tg.expand();
         tg.setHeaderColor('#12161f'); tg.setBackgroundColor('#12161f');
 
+        // ВСТАВЬ СЮДА ССЫЛКУ НА СВОЙ API (например, с Render.com)
+        const API_URL = "https://твой-сервер.onrender.com"; 
+
         // --- ДАННЫЕ ---
-        const services = [
-            { id: 'haircut', name: 'Стрижка', price: 1500, emoji: '✂️' },
-            { id: 'beard', name: 'Борода', price: 800, emoji: '🧔' },
-            { id: 'combo', name: 'Стрижка + борода', price: 2000, emoji: '💈' },
-            { id: 'kids', name: 'Детская', price: 1000, emoji: '🧒' },
-            { id: 'shave', name: 'Бритьё', price: 700, emoji: '🪒' }
-        ];
-        const masters = [
-            { id: '1', name: 'Алексей', spec: 'Классика · борода' },
-            { id: '2', name: 'Дмитрий', spec: 'Фейд · современные' },
-            { id: '3', name: 'Артём', spec: 'Борода · бритьё' },
-            { id: '4', name: 'Иван', spec: 'Детские стрижки' },
-            { id: '5', name: 'Максим', spec: 'Топ-мастер' }
-        ];
-        
-        const dates = [];
-        const weekdays = ['Вс', 'Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб'];
-        const today = new Date();
-        for (let i = 0; i < 7; i++) {
-            const d = new Date(today); d.setDate(today.getDate() + i);
-            let label = weekdays[d.getDay()];
-            if (i === 0) label = 'Сегодня'; if (i === 1) label = 'Завтра';
-            dates.push({ full: d.toISOString().split('T')[0], dayLabel: label, numLabel: d.getDate() + '.' + (d.getMonth() + 1) });
-        }
+        const services = [ { id: 'haircut', name: 'Стрижка', price: 1500, emoji: '✂️' }, { id: 'beard', name: 'Борода', price: 800, emoji: '🧔' }, { id: 'combo', name: 'Стрижка + борода', price: 2000, emoji: '💈' }, { id: 'kids', name: 'Детская', price: 1000, emoji: '🧒' }, { id: 'shave', name: 'Бритьё', price: 700, emoji: '🪒' } ];
+        const masters = [ { id: '1', name: 'Алексей', spec: 'Классика · борода' }, { id: '2', name: 'Дмитрий', spec: 'Фейд · современные' }, { id: '3', name: 'Артём', spec: 'Борода · бритьё' }, { id: '4', name: 'Иван', spec: 'Детские стрижки' }, { id: '5', name: 'Максим', spec: 'Топ-мастер' } ];
+        const dates = []; const weekdays = ['Вс', 'Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб']; const today = new Date();
+        for (let i = 0; i < 7; i++) { const d = new Date(today); d.setDate(today.getDate() + i); let label = weekdays[d.getDay()]; if (i === 0) label = 'Сегодня'; if (i === 1) label = 'Завтра'; dates.push({ full: d.toISOString().split('T')[0], dayLabel: label, numLabel: d.getDate() + '.' + (d.getMonth() + 1) }); }
         const times = ['10:00', '11:00', '12:00', '13:00', '14:00', '15:00', '16:00', '17:00', '18:00', '19:00', '20:00'];
 
-        // Состояние
-        let currentStep = 1;
-        let selService = null, selMaster = null, selDate = null, selTime = null;
-        let localBookings = [];
+        let currentStep = 1; let selService = null, selMaster = null, selDate = null, selTime = null;
+        let busySlots = []; // Сюда будем складывать занятые слоты из БД
+        let myBookings = []; // Сюда будем складывать записи пользователя
 
-        // --- НАВИГАЦИЯ ---
+        // При загрузке грузим данные с сервера
+        window.onload = async () => {
+            await fetchBusySlots();
+            await fetchMyBookings();
+        };
+
+        async function fetchBusySlots() {
+            try {
+                const res = await fetch(`${API_URL}/api/booked_slots`);
+                busySlots = await res.json();
+            } catch (e) { console.error("Ошибка загрузки слотов", e); }
+        }
+
+        async function fetchMyBookings() {
+            try {
+                const res = await fetch(`${API_URL}/api/my_bookings/${tg.initDataUnsafe.user.id}`);
+                myBookings = await res.json();
+            } catch (e) { console.error("Ошибка загрузки записей", e); }
+        }
+
         function switchTab(pageId, el) {
             document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
             document.getElementById('page-' + pageId).classList.add('active');
             document.querySelectorAll('.tab-item').forEach(t => t.classList.remove('active'));
             if (el) el.classList.add('active');
             
-            if (pageId === 'bookings') renderBookings();
-            if (pageId === 'booking') resetBookingFlow();
+            if (pageId === 'bookings') { fetchMyBookings().then(renderBookings); }
+            if (pageId === 'booking') { resetBookingFlow(); fetchBusySlots(); }
             
             tg.HapticFeedback.selectionChanged();
         }
 
-        // --- АДРЕСА (АККОРДЕОН) ---
         function toggleAddress(header) {
-            const content = header.nextElementSibling;
-            const arrow = header.querySelector('.arrow');
-            
-            // Закрываем другие, если открыт
-            document.querySelectorAll('.address-content').forEach(c => {
-                if (c !== content) {
-                    c.classList.remove('open');
-                    c.previousElementSibling.querySelector('.arrow').style.transform = 'rotate(0deg)';
-                }
-            });
-
-            if (content.classList.contains('open')) {
-                content.classList.remove('open');
-                arrow.style.transform = 'rotate(0deg)';
-            } else {
-                content.classList.add('open');
-                arrow.style.transform = 'rotate(90deg)';
-            }
+            const content = header.nextElementSibling; const arrow = header.querySelector('.arrow');
+            document.querySelectorAll('.address-content').forEach(c => { if (c !== content) { c.classList.remove('open'); c.previousElementSibling.querySelector('.arrow').style.transform = 'rotate(0deg)'; } });
+            if (content.classList.contains('open')) { content.classList.remove('open'); arrow.style.transform = 'rotate(0deg)'; } else { content.classList.add('open'); arrow.style.transform = 'rotate(90deg)'; }
             tg.HapticFeedback.impactOccurred('light');
         }
 
-        // --- ПОДДЕРЖКА ---
         function sendSupport() {
             const text = document.getElementById('support-text').value.trim();
             if (!text) { tg.showAlert('Пожалуйста, напишите ваш вопрос'); return; }
             
-            const data = { action: 'support', text: text };
-            tg.sendData(JSON.stringify(data));
-            tg.HapticFeedback.notificationOccurred('success');
-            
-            document.getElementById('support-text').value = '';
-            tg.showAlert('Сообщение отправлено! Мы скоро ответим.');
-            setTimeout(() => switchTab('home', document.getElementById('tab-home')), 1500);
+            const user = tg.initDataUnsafe.user;
+            const payload = { user_id: user.id, user_name: user.first_name + (user.last_name ? ' ' + user.last_name : ''), message: text };
+
+            fetch(`${API_URL}/api/support`, {
+                method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload)
+            }).then(() => {
+                tg.HapticFeedback.notificationOccurred('success');
+                document.getElementById('support-text').value = '';
+                tg.showAlert('Сообщение отправлено! Мы скоро ответим.');
+                setTimeout(() => switchTab('home', document.getElementById('tab-home')), 1500);
+            });
         }
 
-        // --- ЛОГИКА ЗАПИСИ ---
         function resetBookingFlow() {
-            currentStep = 1;
-            selService = null; selMaster = null; selDate = null; selTime = null;
-            document.getElementById('step-1').style.display = 'block';
-            document.getElementById('step-2').style.display = 'none';
-            document.getElementById('step-3').style.display = 'none';
-            document.getElementById('step-4').style.display = 'none';
-            
-            document.getElementById('btn-next-1').classList.add('disabled');
-            document.getElementById('btn-next-2').classList.add('disabled');
-            document.getElementById('btn-next-3').classList.add('disabled');
-            document.getElementById('btn-next-4').classList.add('disabled');
-            
+            currentStep = 1; selService = null; selMaster = null; selDate = null; selTime = null;
+            document.getElementById('step-1').style.display = 'block'; document.getElementById('step-2').style.display = 'none'; document.getElementById('step-3').style.display = 'none'; document.getElementById('step-4').style.display = 'none';
+            document.getElementById('btn-next-1').classList.add('disabled'); document.getElementById('btn-next-2').classList.add('disabled'); document.getElementById('btn-next-3').classList.add('disabled'); document.getElementById('btn-next-4').classList.add('disabled');
             renderServices();
         }
 
         function goToStep(step) {
-            document.getElementById('step-' + currentStep).style.display = 'none';
-            currentStep = step;
-            document.getElementById('step-' + step).style.display = 'block';
-            
-            if (step === 2) renderMasters();
-            if (step === 3) renderDates();
-            if (step === 4) renderTimes();
-            
+            document.getElementById('step-' + currentStep).style.display = 'none'; currentStep = step; document.getElementById('step-' + step).style.display = 'block';
+            if (step === 2) renderMasters(); if (step === 3) renderDates(); if (step === 4) renderTimes();
             tg.HapticFeedback.impactOccurred('light');
         }
 
         function renderServices() {
-            const list = document.getElementById('services-list');
-            list.innerHTML = '';
+            const list = document.getElementById('services-list'); list.innerHTML = '';
             services.forEach(s => {
-                const el = document.createElement('div');
-                el.className = 'option-card';
-                el.innerHTML = `
-                    <div class="option-card-left"><h4>${s.emoji} ${s.name}</h4></div>
-                    <div class="option-card-right">${s.price} ₽</div>
-                `;
-                el.onclick = () => {
-                    selService = s;
-                    document.querySelectorAll('#services-list .option-card').forEach(c => c.classList.remove('active'));
-                    el.classList.add('active');
-                    document.getElementById('btn-next-1').classList.remove('disabled');
-                    tg.HapticFeedback.selectionChanged();
-                };
+                const el = document.createElement('div'); el.className = 'option-card';
+                el.innerHTML = `<div class="option-card-left"><h4>${s.emoji} ${s.name}</h4></div><div class="option-card-right">${s.price} ₽</div>`;
+                el.onclick = () => { selService = s; document.querySelectorAll('#services-list .option-card').forEach(c => c.classList.remove('active')); el.classList.add('active'); document.getElementById('btn-next-1').classList.remove('disabled'); tg.HapticFeedback.selectionChanged(); };
                 list.appendChild(el);
             });
         }
 
         function renderMasters() {
-            const list = document.getElementById('masters-list');
-            list.innerHTML = '';
+            const list = document.getElementById('masters-list'); list.innerHTML = '';
             masters.forEach(m => {
-                const el = document.createElement('div');
-                el.className = 'option-card';
-                el.innerHTML = `
-                    <div class="option-card-left"><h4>${m.name}</h4><p>${m.spec}</p></div>
-                `;
-                el.onclick = () => {
-                    selMaster = m;
-                    document.querySelectorAll('#masters-list .option-card').forEach(c => c.classList.remove('active'));
-                    el.classList.add('active');
-                    document.getElementById('btn-next-2').classList.remove('disabled');
-                    tg.HapticFeedback.selectionChanged();
-                };
+                const el = document.createElement('div'); el.className = 'option-card';
+                el.innerHTML = `<div class="option-card-left"><h4>${m.name}</h4><p>${m.spec}</p></div>`;
+                el.onclick = () => { selMaster = m; document.querySelectorAll('#masters-list .option-card').forEach(c => c.classList.remove('active')); el.classList.add('active'); document.getElementById('btn-next-2').classList.remove('disabled'); tg.HapticFeedback.selectionChanged(); };
                 list.appendChild(el);
             });
         }
 
         function renderDates() {
-            const list = document.getElementById('dates-list');
-            list.innerHTML = '';
+            const list = document.getElementById('dates-list'); list.innerHTML = '';
             dates.forEach(d => {
-                const el = document.createElement('div');
-                el.className = 'option-card';
-                el.style.textAlign = 'center';
-                el.style.flexDirection = 'column';
-                el.style.justifyContent = 'center';
+                const el = document.createElement('div'); el.className = 'option-card'; el.style.textAlign = 'center'; el.style.flexDirection = 'column'; el.style.justifyContent = 'center';
                 el.innerHTML = `<h4 style="margin:0; font-size:14px; color:var(--text-muted);">${d.dayLabel}</h4><div style="font-size:18px; font-weight:700;">${d.numLabel}</div>`;
-                el.onclick = () => {
-                    selDate = d;
-                    document.querySelectorAll('#dates-list .option-card').forEach(c => c.classList.remove('active'));
-                    el.classList.add('active');
-                    document.getElementById('btn-next-3').classList.remove('disabled');
-                    tg.HapticFeedback.selectionChanged();
-                };
+                el.onclick = () => { selDate = d; document.querySelectorAll('#dates-list .option-card').forEach(c => c.classList.remove('active')); el.classList.add('active'); document.getElementById('btn-next-3').classList.remove('disabled'); tg.HapticFeedback.selectionChanged(); };
                 list.appendChild(el);
             });
         }
 
         function renderTimes() {
-            const grid = document.getElementById('times-list');
-            grid.innerHTML = '';
+            const grid = document.getElementById('times-list'); grid.innerHTML = '';
             times.forEach(t => {
-                const el = document.createElement('div');
-                el.className = 'time-pill';
-                el.textContent = t;
+                const el = document.createElement('div'); el.className = 'time-pill'; el.textContent = t;
                 
-                // Проверка занятости
+                // Проверяем занятость по данным из БД
                 if (selMaster && selDate) {
-                    const busy = localBookings.some(b => String(b.master_id) === String(selMaster.id) && b.date === selDate.full && b.time === t);
+                    const busy = busySlots.some(b => String(b.master_id) === String(selMaster.id) && b.date === selDate.full && b.time === t);
                     if (busy) el.classList.add('disabled');
                 }
 
-                el.onclick = () => {
-                    selTime = t;
-                    document.querySelectorAll('#times-list .time-pill').forEach(c => c.classList.remove('active'));
-                    el.classList.add('active');
-                    document.getElementById('btn-next-4').classList.remove('disabled');
-                    tg.HapticFeedback.selectionChanged();
-                };
+                el.onclick = () => { selTime = t; document.querySelectorAll('#times-list .time-pill').forEach(c => c.classList.remove('active')); el.classList.add('active'); document.getElementById('btn-next-4').classList.remove('disabled'); tg.HapticFeedback.selectionChanged(); };
                 grid.appendChild(el);
             });
         }
 
-        function finishBooking() {
+        async function finishBooking() {
             if (!selService || !selMaster || !selDate || !selTime) return;
+            const user = tg.initDataUnsafe.user;
             
-            const bookingId = Date.now().toString();
-            const newBooking = {
-                id: bookingId,
-                service: selService.name, service_id: selService.id, price: selService.price,
-                master: selMaster.name, master_id: String(selMaster.id),
-                date: selDate.full, dateFormatted: selDate.numLabel, time: selTime
+            const payload = {
+                user_id: user.id, user_name: user.first_name + (user.last_name ? ' ' + user.last_name : ''), username: user.username || null,
+                service_id: selService.id, master_id: String(selMaster.id), date: selDate.full, time: selTime
             };
-            
-            localBookings.push(newBooking);
-            tg.CloudStorage.setItem('barber_bookings_v2', JSON.stringify(localBookings));
 
-            const data = { 
-                action: 'book', 
-                service_id: selService.id, 
-                master_id: String(selMaster.id),
-                date: selDate.full, 
-                time: selTime 
-            };
-            tg.sendData(JSON.stringify(data));
-            tg.HapticFeedback.notificationOccurred('success');
-            
-            setTimeout(() => { 
-                resetBookingFlow();
-                switchTab('bookings', document.getElementById('tab-bookings')); 
-            }, 500);
+            const res = await fetch(`${API_URL}/api/book`, {
+                method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload)
+            });
+            const result = await res.json();
+
+            if (result.status === "ok") {
+                tg.HapticFeedback.notificationOccurred('success');
+                // Отправляем в бота для уведомления
+                tg.sendData(JSON.stringify({ action: 'book', service_id: selService.id, master_id: String(selMaster.id), date: selDate.full, time: selTime }));
+                setTimeout(() => { resetBookingFlow(); switchTab('bookings', document.getElementById('tab-bookings')); }, 500);
+            } else {
+                tg.showAlert(result.message || "Ошибка записи");
+            }
         }
-
-        // --- МОИ ЗАПИСИ ---
-        tg.CloudStorage.getItem('barber_bookings_v2', (err, value) => {
-            if (!err && value) { try { localBookings = JSON.parse(value); } catch(e) {} }
-        });
 
         function renderBookings() {
             const list = document.getElementById('bookings-container');
-            if (localBookings.length === 0) {
-                list.innerHTML = `<div class="empty-state"><p>У вас пока нет записей.</p></div>`;
-                return;
-            }
+            if (myBookings.length === 0) { list.innerHTML = `<div class="empty-state"><p>У вас пока нет записей.</p></div>`; return; }
             list.innerHTML = '';
-            localBookings.slice().reverse().forEach(b => {
-                const el = document.createElement('div');
-                el.className = 'booking-item';
+            myBookings.slice().reverse().forEach(b => {
+                const s = services.find(x => x.id === b.service_id) || { name: b.service_id, price: 0, emoji: '✂️' };
+                const m = masters.find(x => x.id === String(b.master_id)) || { name: b.master_id };
+                const el = document.createElement('div'); el.className = 'booking-item';
                 el.innerHTML = `
-                    <div class="booking-header"><span class="booking-date">📅 ${b.dateFormatted} в ${b.time}</span><span style="color:var(--accent); font-weight:700;">${b.price} ₽</span></div>
-                    <div class="booking-info">✂️ Услуга: <b>${b.service}</b><br>👨‍🔧 Мастер: <b>${b.master}</b></div>
-                    <button class="btn-cancel" onclick="cancelBooking('${b.id}')">Отменить</button>
+                    <div class="booking-header"><span class="booking-date">📅 ${b.date} в ${b.time}</span><span style="color:var(--accent); font-weight:700;">${s.price} ₽</span></div>
+                    <div class="booking-info">✂️ Услуга: <b>${s.name}</b><br>👨‍🔧 Мастер: <b>${m.name}</b></div>
                 `;
                 list.appendChild(el);
             });
-        }
-
-        function cancelBooking(id) {
-            localBookings = localBookings.filter(b => b.id !== id);
-            tg.CloudStorage.setItem('barber_bookings_v2', JSON.stringify(localBookings));
-            
-            const data = { action: 'cancel', booking_id: id };
-            tg.sendData(JSON.stringify(data));
-            
-            tg.HapticFeedback.notificationOccurred('warning');
-            renderBookings();
         }
     </script>
 </body>
