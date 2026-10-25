@@ -9,12 +9,11 @@ from aiogram.enums import ParseMode
 import json
 
 # ================== НАСТРОЙКИ ==================
-BOT_TOKEN = "8914034815:AAFlzgLOtDc-P0g2vb6KDHs7SEtDaWdwe_0"
+BOT_TOKEN = "8914034815:AAFlzgLOtDc-P0g2vb6KDHs7SEtDaWdwe_"
 WEBAPP_URL = "https://noom123412.github.io/barberminiapp/" 
 
-# ВАЖНО: Сюда вставь свой Telegram ID (узнать можно у бота @userinfobot), 
-# чтобы тебе приходили уведомления о новых записях.
-ADMIN_CHAT_ID = 7714111634 
+# ВАЖНО: Сюда вставь ЮЗЕРНЕЙМ через @, как ты и просил
+ADMIN_USERNAME = "@tetny"
 
 # ================== ДАННЫЕ ==================
 SHOP_NAME = "Примерный"
@@ -128,25 +127,24 @@ async def web_app_data_handler(msg: Message):
             )
             await msg.answer(client_text)
 
-            # Отправляем уведомление АДМИНУ
-            if ADMIN_CHAT_ID and str(ADMIN_CHAT_ID) != "123456789":
+            # Отправляем уведомление АДМИНУ ПО ЮЗЕРНЕЙМУ
+            if ADMIN_USERNAME:
                 admin_text = (
                     f"🔔 <b>НОВАЯ ЗАПИСЬ!</b>\n"
                     f"━━━━━━━━━━━━━━━━━━\n\n"
                     f"👤 Клиент: <b>{msg.from_user.full_name}</b>\n"
-                    f"🆔 ID: <code>{msg.from_user.id}</code>\n"
-                    f"📞 Юзернейм: @{msg.from_user.username if msg.from_user.username else 'нет'}\n\n"
+                    f"🆔 Юзернейм: @{msg.from_user.username if msg.from_user.username else 'нет'}\n\n"
                     f"✂️ Услуга: <b>{s['name']}</b>\n"
                     f"💰 Стоимость: <b>{s['price']} ₽</b>\n"
                     f"👨‍🔧 Мастер: <b>{m['name']}</b>\n"
                     f"📅 Время: <b>{d_formatted} в {t_str}</b>"
                 )
-                await bot.send_message(ADMIN_CHAT_ID, admin_text)
+                # Отправляем по юзернейму. Если юзернейм не найден, бот выдаст ошибку в консоль.
+                await bot.send_message(ADMIN_USERNAME, admin_text)
 
         elif data.get("action") == "cancel":
-            # Уведомление админу об отмене
-            if ADMIN_CHAT_ID and str(ADMIN_CHAT_ID) != "123456789":
-                await bot.send_message(ADMIN_CHAT_ID, f"❌ <b>Отмена записи</b>\nКлиент: {msg.from_user.full_name}")
+            if ADMIN_USERNAME:
+                await bot.send_message(ADMIN_USERNAME, f"❌ <b>Отмена записи</b>\nКлиент: {msg.from_user.full_name}")
 
     except Exception as e:
         logging.error(f"Ошибка WebApp: {e}")
