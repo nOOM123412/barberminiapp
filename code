@@ -7,13 +7,13 @@ from aiogram.filters import CommandStart
 from aiogram.client.default import DefaultBotProperties
 from aiogram.enums import ParseMode
 import json
+from database import SessionLocal, Booking, SupportMessage
 
 # ================== НАСТРОЙКИ ==================
 BOT_TOKEN = "ВСТАВЬ_СВОЙ_ТОКЕН_СЮДА"
 WEBAPP_URL = "https://noom123412.github.io/barberminiapp/" 
-
-# ВАЖНО: Вставь свой юзернейм через @ (например, "@tetny")
-ADMIN_USERNAME = "@tetny"
+# Вставь свой ID (цифры)
+ADMIN_CHAT_ID = 123456789 
 
 # ================== ДАННЫЕ ==================
 SHOP_NAME = "Примерный"
@@ -24,11 +24,11 @@ WORK_HOURS = "10:00 – 21:00 · без выходных"
 SHOP_RATING = "4.9 ★ (127 отзывов)"
 
 MASTERS = {
-    "1": {"name": "Алексей", "spec": "Классика · борода", "exp": "7 лет", "rating": "5.0 ★"},
-    "2": {"name": "Дмитрий", "spec": "Фейд · современные стрижки", "exp": "5 лет", "rating": "4.9 ★"},
-    "3": {"name": "Артём", "spec": "Борода · бритьё", "exp": "6 лет", "rating": "5.0 ★"},
-    "4": {"name": "Иван", "spec": "Детские стрижки", "exp": "4 года", "rating": "4.8 ★"},
-    "5": {"name": "Максим", "spec": "Топ-мастер · любые стрижки", "exp": "10 лет", "rating": "5.0 ★"},
+    "1": {"name": "Алексей"},
+    "2": {"name": "Дмитрий"},
+    "3": {"name": "Артём"},
+    "4": {"name": "Иван"},
+    "5": {"name": "Максим"},
 }
 
 SERVICES = {
@@ -105,13 +105,40 @@ async def about(cb: CallbackQuery):
 async def web_app_data_handler(msg: Message):
     try:
         data = json.loads(msg.web_app_data.data)
+        logging.info(f"Получены данные из WebApp: {data}")
         
+        db = SessionLocal() # Открываем сессию БД
+
         if data.get("action") == "book":
             s = SERVICES.get(data["service_id"])
             m = MASTERS.get(data["master_id"])
             d_str, t_str = data["date"], data["time"]
-            
             d_formatted = datetime.strptime(d_str, "%Y-%m-%d").strftime("%d.%m.%Y")
+
+            # Проверка на дубликат (на всякий случай)
+            existing = db.query(Booking).filter(
+                Booking.master_id == data["master_id"],
+                Booking.date == d_str,
+                Booking.time == t_str
+            ).first()
+
+            if existing:
+                await msg.answer("❌ Увы, это время только что заняли. Выберите другое.")
+                db.close()
+                return
+
+            # Сохраняем в БД
+            new_booking = Booking(
+                user_id=msg.from_user.id,
+                user_name=msg.from_user.full_name,
+                username=msg.from_user.username,
+                service_id=data["service_id"],
+                master_id=data["master_id"],
+                date=d_str,
+                time=t_str
+            )
+            db.add(new_booking)
+            db.commit()
 
             # Подтверждение клиенту
             client_text = (
@@ -122,13 +149,12 @@ async def web_app_data_handler(msg: Message):
                 f"👨‍🔧 Мастер: <b>{m['name']}</b>\n"
                 f"📅 <b>{d_formatted} в {t_str}</b>\n\n"
                 f"📍 {SHOP_ADDRESS}\n"
-                f"📞 {SHOP_PHONE}\n\n"
-                f"<i>Ждем вас!</i>"
+                f"📞 {SHOP_PHONE}"
             )
             await msg.answer(client_text)
 
             # Уведомление админу
-            if ADMIN_USERNAME:
+            if ADMIN_CHAT_ID and str(ADMIN_CHAT_ID) != "123456789":
                 admin_text = (
                     f"🔔 <b>НОВАЯ ЗАПИСЬ!</b>\n"
                     f"━━━━━━━━━━━━━━━━━━\n\n"
@@ -139,18 +165,29 @@ async def web_app_data_handler(msg: Message):
                     f"👨‍🔧 Мастер: <b>{m['name']}</b>\n"
                     f"📅 Время: <b>{d_formatted} в {t_str}</b>"
                 )
-                await bot.send_message(ADMIN_USERNAME, admin_text)
+                try:
+                    await bot.send_message(ADMIN_CHAT_ID, admin_text)
+                except Exception as e:
+                    logging.error(f"ОШИБКА отправки админу: {e}")
 
-        elif data.get("action") == "cancel":
-            if ADMIN_USERNAME:
-                await bot.send_message(ADMIN_USERNAME, f"❌ <b>Отмена записи</b>\nКлиент: {msg.from_user.full_name}")
-
-        # --- ОБРАБОТКА ПОДДЕРЖКИ ---
         elif data.get("action") == "support":
             support_text = data["text"]
-            if ADMIN_USERNAME:
-                await bot.send_message(ADMIN_USERNAME, f"💬 <b>Обращение в поддержку</b>\n\n👤 От: {msg.from_user.full_name} (@{msg.from_user.username if msg.from_user.username else 'нет'})\n\n📝 Сообщение:\n{support_text}")
-                await msg.answer("✅ Ваше сообщение отправлено в поддержку. Мы скоро свяжемся с вами!")
+            new_msg = SupportMessage(
+                user_id=msg.from_user.id,
+                user_name=msg.from_user.full_name,
+                message=support_text
+            )
+            db.add(new_msg)
+            db.commit()
+
+            if ADMIN_CHAT_ID and str(ADMIN_CHAT_ID) != "123456789":
+                try:
+                    await bot.send_message(ADMIN_CHAT_ID, f"💬 <b>Обращение в поддержку</b>\n\n👤 От: {msg.from_user.full_name} (@{msg.from_user.username if msg.from_user.username else 'нет'})\n\n📝 Сообщение:\n{support_text}")
+                    await msg.answer("✅ Ваше сообщение отправлено в поддержку. Мы скоро свяжемся с вами!")
+                except Exception as e:
+                    logging.error(f"ОШИБКА отправки админу (поддержка): {e}")
+        
+        db.close() # Закрываем сессию
 
     except Exception as e:
         logging.error(f"Ошибка WebApp: {e}")
