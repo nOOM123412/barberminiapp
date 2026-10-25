@@ -10,10 +10,10 @@ import json
 from database import SessionLocal, Booking, SupportMessage
 
 # ================== НАСТРОЙКИ ==================
-BOT_TOKEN = "ВСТАВЬ_СВОЙ_ТОКЕН_СЮДА"
+BOT_TOKEN = "8914034815:AAFlzgLOtDc-P0g2vb6KDHs7SEtDaWdwe_"
 WEBAPP_URL = "https://noom123412.github.io/barberminiapp/" 
 # Вставь свой ID (цифры)
-ADMIN_CHAT_ID = 123456789 
+ADMIN_CHAT_ID = 8994905319 
 
 # ================== ДАННЫЕ ==================
 SHOP_NAME = "Примерный"
