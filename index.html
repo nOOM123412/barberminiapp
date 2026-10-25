@@ -124,8 +124,9 @@
         tg.expand();
         tg.setHeaderColor('#0f0f0f'); tg.setBackgroundColor('#0f0f0f');
 
+        // ТУТ МЫ ЖЕСТКО ЗАДАЕМ ID МАСТЕРОВ, ЧТОБЫ ОНИ СОВПАДАЛИ С БОТОМ
         const services = [ { id: 'haircut', name: 'Стрижка', price: 1500, emoji: '✂️' }, { id: 'beard', name: 'Борода', price: 800, emoji: '🧔' }, { id: 'combo', name: 'Стрижка + борода', price: 2000, emoji: '💈' }, { id: 'kids', name: 'Детская', price: 1000, emoji: '🧒' }, { id: 'shave', name: 'Бритьё', price: 700, emoji: '🪒' } ];
-        const masters = [ { id: '1', name: 'Алексей', emoji: '👨‍🦱' }, { id: '2', name: 'Дмитрий', emoji: '👨‍🦲' }, { id: '3', name: 'Артём', emoji: '🧔' } ];
+        const masters = [ { id: '1', name: 'Алексей', emoji: '👨‍🦱' }, { id: '2', name: 'Дмитрий', emoji: '👨‍🦲' }, { id: '3', name: 'Артём', emoji: '🧔' }, { id: '4', name: 'Иван', emoji: '👦' }, { id: '5', name: 'Максим', emoji: '👱' } ];
         
         const dates = [];
         const weekdays = ['Вс', 'Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб'];
@@ -141,7 +142,7 @@
         let selectedService = null, selectedMaster = null, selectedDate = null, selectedTime = null;
         let localBookings = [];
 
-        // Загрузка записей из CloudStorage (синхронизация с Telegram)
+        // Загрузка записей из CloudStorage
         tg.CloudStorage.getItem('barber_bookings', (err, value) => {
             if (!err && value) localBookings = JSON.parse(value);
             else localBookings = [];
@@ -161,7 +162,7 @@
         function openSheet() {
             document.getElementById('overlay').classList.add('active');
             document.getElementById('bottom-sheet').classList.add('active');
-            renderTimeSlots(); // Обновляем занятые слоты
+            renderTimeSlots();
             tg.HapticFeedback.impactOccurred('medium');
         }
         function closeSheet() {
@@ -201,15 +202,14 @@
             times.forEach(t => {
                 const div = document.createElement('div'); div.className = 'time-pill'; div.textContent = t;
                 
-                // Проверяем, занято ли время у выбранного мастера
                 let isBusy = false;
                 if (selectedMaster && selectedDate) {
-                    isBusy = localBookings.some(b => b.master_id === selectedMaster.id && b.date === selectedDate.full && b.time === t);
+                    // ТУТ ПРОВЕРКА: смотрим, есть ли запись у ЭТОГО мастера на ЭТУ дату в ЭТО время
+                    isBusy = localBookings.some(b => String(b.master_id) === String(selectedMaster.id) && b.date === selectedDate.full && b.time === t);
                 }
                 
                 if (isBusy) div.classList.add('disabled');
                 
-                // Если время было выбрано, но стало занятым - сбрасываем
                 if (isBusy && selectedTime === t) {
                     selectedTime = null;
                     updateUI();
@@ -218,7 +218,6 @@
                 div.onclick = () => { selectedTime = t; updateUI(); };
                 timeGrid.appendChild(div);
             });
-            // Восстанавливаем активный класс
             if (selectedTime) {
                 Array.from(timeGrid.children).forEach(div => {
                     if (div.textContent === selectedTime && !div.classList.contains('disabled')) div.classList.add('active');
@@ -246,23 +245,26 @@
         function bookAppointment() {
             if (!selectedService || !selectedMaster || !selectedDate || !selectedTime) return;
 
-            // Генерируем уникальный ID для записи
             const bookingId = Date.now().toString();
 
             const newBooking = {
                 id: bookingId,
                 service: selectedService.name, service_id: selectedService.id, price: selectedService.price,
-                master: selectedMaster.name, master_id: selectedMaster.id,
+                master: selectedMaster.name, 
+                master_id: String(selectedMaster.id), // ЖЕСТКО В СТРОКУ
                 date: selectedDate.full, dateFormatted: selectedDate.numLabel, time: selectedTime
             };
 
             localBookings.push(newBooking);
-            
-            // Сохраняем в облако
             tg.CloudStorage.setItem('barber_bookings', JSON.stringify(localBookings));
 
-            // Отправляем в бота
-            const data = { action: 'book', service_id: selectedService.id, master_id: selectedMaster.id, date: selectedDate.full, time: selectedTime };
+            const data = { 
+                action: 'book', 
+                service_id: selectedService.id, 
+                master_id: String(selectedMaster.id), // ЖЕСТКО В СТРОКУ
+                date: selectedDate.full, 
+                time: selectedTime 
+            };
             tg.sendData(JSON.stringify(data));
             tg.HapticFeedback.notificationOccurred('success');
             
@@ -273,12 +275,10 @@
             }, 500);
         }
 
-        // Отмена записи из Mini App
         function cancelBooking(id) {
             localBookings = localBookings.filter(b => b.id !== id);
             tg.CloudStorage.setItem('barber_bookings', JSON.stringify(localBookings));
             
-            // Отправляем команду отмены в бота
             const data = { action: 'cancel', booking_id: id };
             tg.sendData(JSON.stringify(data));
             
