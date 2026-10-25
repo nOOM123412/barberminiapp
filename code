@@ -9,10 +9,10 @@ from aiogram.enums import ParseMode
 import json
 
 # ================== НАСТРОЙКИ ==================
-BOT_TOKEN = "8914034815:AAFlzgLOtDc-P0g2vb6KDHs7SEtDaWdwe_"
+BOT_TOKEN = "ВСТАВЬ_СВОЙ_ТОКЕН_СЮДА"
 WEBAPP_URL = "https://noom123412.github.io/barberminiapp/" 
 
-# ВАЖНО: Сюда вставь ЮЗЕРНЕЙМ через @, как ты и просил
+# ВАЖНО: Вставь свой юзернейм через @ (например, "@tetny")
 ADMIN_USERNAME = "@tetny"
 
 # ================== ДАННЫЕ ==================
@@ -113,7 +113,7 @@ async def web_app_data_handler(msg: Message):
             
             d_formatted = datetime.strptime(d_str, "%Y-%m-%d").strftime("%d.%m.%Y")
 
-            # Отправляем подтверждение клиенту
+            # Подтверждение клиенту
             client_text = (
                 f"✅ <b>Вы записаны!</b>\n"
                 f"━━━━━━━━━━━━━━━━━━\n\n"
@@ -127,7 +127,7 @@ async def web_app_data_handler(msg: Message):
             )
             await msg.answer(client_text)
 
-            # Отправляем уведомление АДМИНУ ПО ЮЗЕРНЕЙМУ
+            # Уведомление админу
             if ADMIN_USERNAME:
                 admin_text = (
                     f"🔔 <b>НОВАЯ ЗАПИСЬ!</b>\n"
@@ -139,12 +139,18 @@ async def web_app_data_handler(msg: Message):
                     f"👨‍🔧 Мастер: <b>{m['name']}</b>\n"
                     f"📅 Время: <b>{d_formatted} в {t_str}</b>"
                 )
-                # Отправляем по юзернейму. Если юзернейм не найден, бот выдаст ошибку в консоль.
                 await bot.send_message(ADMIN_USERNAME, admin_text)
 
         elif data.get("action") == "cancel":
             if ADMIN_USERNAME:
                 await bot.send_message(ADMIN_USERNAME, f"❌ <b>Отмена записи</b>\nКлиент: {msg.from_user.full_name}")
+
+        # --- ОБРАБОТКА ПОДДЕРЖКИ ---
+        elif data.get("action") == "support":
+            support_text = data["text"]
+            if ADMIN_USERNAME:
+                await bot.send_message(ADMIN_USERNAME, f"💬 <b>Обращение в поддержку</b>\n\n👤 От: {msg.from_user.full_name} (@{msg.from_user.username if msg.from_user.username else 'нет'})\n\n📝 Сообщение:\n{support_text}")
+                await msg.answer("✅ Ваше сообщение отправлено в поддержку. Мы скоро свяжемся с вами!")
 
     except Exception as e:
         logging.error(f"Ошибка WebApp: {e}")
